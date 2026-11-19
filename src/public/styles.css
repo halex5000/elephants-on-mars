@@ -1443,6 +1443,7 @@ body.projector .mast {
 
 .projected-ranking {
   position: relative;
+  background: rgb(12 14 32 / 88%);
 }
 .projected-ranking ol {
   display: grid;
