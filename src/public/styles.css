@@ -230,3 +230,6 @@ label.f{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:70
 button.qrbox.big{cursor:zoom-out}
 button.qrbox:focus-visible{outline:3px solid var(--captain);outline-offset:3px}
 @media (max-width:520px){.joinwho{gap:14px}.qrbox.big{width:112px}}
+.share{margin-top:18px;align-items:center}
+.share-text{margin-top:12px}
+.share-text textarea{width:100%;margin-top:10px;font:14px/1.5 ui-monospace,Menlo,Consolas,monospace;background:rgba(0,0,0,.35);color:inherit;border:1px solid var(--line);border-radius:10px;padding:12px;resize:vertical}
