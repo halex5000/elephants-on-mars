@@ -27,7 +27,6 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 | N3 | Big-game fuel contention | In the 200-player load test, 50 engineers sharing one pool stretched the first mission past 4 minutes (later missions fine thanks to carried-over stock). Options: raise `FUEL.ratePerTeam`, raise the cap, or start each team with a little stock. |
 | N5 | Captain's "Restart" button | The original has one; what it does isn't shown. Ask someone who's played (Alex has played the original). |
 | N6 | Build and run the Docker image locally | `docker compose up --build` with OrbStack. Never built by a worker yet; Fly's remote builder or CI will be first. |
-| N8 | Launch moment | One orchestrated animation when a team launches (rocket lift-off on the big screen). Respect reduced motion. |
 | N13 | Realistic load test (Dex) | Next step from `docs/scale-50-teams.md`: a bot that plays default rules ($10/mission across three buyers, 4-minute clock) and per-team metrics in `tests/load/` (time to first fuel buy, rocket retries, % landed at 4:00, action→view latency). Run at 2/25/50 teams and add the numbers to the doc. Decides whether N11 sectors are needed. |
 | N11 | 50-team play: market sectors + big screen | Proposal merged (`docs/scale-50-teams.md`). Waiting on N13's numbers before building. Pairs with N3. |
 
@@ -44,6 +43,7 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 
 ## Done
 
+- Launch moment (N8): a rocket lifts off over the shared screen per launch (max 3 at once, "+N more"), fades in place with reduced motion, never replayed on reload
 - Big screen (N7): `/screen/CODE`, read-only projector view opened from the host page; screen sockets can't act (tested)
 - State snapshots (N10, Dex): opt-in `STATE_FILE`, restores rooms, seats and timers after a crash or restart
 - 50-team proposal (N11, Dex): `docs/scale-50-teams.md`

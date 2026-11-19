@@ -89,13 +89,45 @@ function onMsg(m: ServerMsg) {
   switch (m.t) {
     case 'created': store.set(`eom-host-${m.code}`, m.hostToken); if (ui.pass.trim()) store.set(PASS_KEY, ui.pass.trim()); ui.needPass = false; go({ kind: 'host', code: m.code }); break;
     case 'joined': store.set(`eom-player-${m.code}`, { playerId: m.playerId, token: m.token }, true); go({ kind: 'play', code: m.code }); break;
-    case 'view': view = m.view; clockSkew = m.view.serverNow - Date.now(); speed = m.view.speed || 1; viewAt = Date.now(); viewServerNow = m.view.serverNow; fatal = ''; ui.busy = false; render(); break;
+    case 'view': spotLaunches(m.view); view = m.view; clockSkew = m.view.serverNow - Date.now(); speed = m.view.speed || 1; viewAt = Date.now(); viewServerNow = m.view.serverNow; fatal = ''; ui.busy = false; render(); break;
     case 'error':
       ui.busy = false;
       if (m.needPasscode) { store.del(PASS_KEY); ui.needPass = true; render(); setTimeout(() => $<HTMLInputElement>('#hpass')?.focus(), 0); }
       if (m.fatal) { if (route.kind === 'play') store.del(`eom-player-${route.code}`, true); fatal = m.message; view = null; const c = route.kind === 'home' ? undefined : route.code; go({ kind: 'home', code: c }); ui.code = c ?? ''; render(); }
       toast(m.message); break;
   }
+}
+
+/* ---------- launch moment ---------- */
+// One lift-off on the shared screen when a team launches. Lives outside #app so
+// re-renders never cut it short. Not replayed on reload or when joining late.
+let launchedSeen: Set<string> | null = null, launchKey = '';
+function spotLaunches(v: HostView | PlayerView) {
+  if (v.kind !== 'host' || v.phase !== 'play') { launchedSeen = null; return; }
+  const key = `${v.code}|${v.round}`;
+  const now = new Set(v.teams.filter(t => t.status.launched).map(t => t.id));
+  const before = key === launchKey ? launchedSeen : null;
+  launchedSeen = now; launchKey = key;
+  if (!before) return;
+  const fresh = v.teams.filter(t => now.has(t.id) && !before.has(t.id));
+  if (fresh.length) liftOff(fresh.map(t => t.name), v.teams.map(t => t.name));
+}
+function liftOff(teams: string[], all: string[]) {
+  let layer = document.getElementById('liftoffs');
+  if (!layer) { layer = document.createElement('div'); layer.id = 'liftoffs'; layer.setAttribute('aria-live', 'polite'); document.body.append(layer); }
+  // A rush of launches (50 teams) shows at most three rockets; the last one carries the rest.
+  const shown = teams.slice(0, 3), extra = teams.length - shown.length;
+  shown.forEach((name, i) => {
+    const el = document.createElement('div');
+    el.className = 'liftoff';
+    el.style.setProperty('--c', teamColor(name, all)!);
+    el.style.setProperty('--x', `${[50, 28, 72][i]}%`);
+    el.style.setProperty('--d', `${i * 180}ms`);
+    const label = `${esc(name)} launched${i === shown.length - 1 && extra > 0 ? ` <small>+${extra} more</small>` : ''}`;
+    el.innerHTML = `<div class="liftoff-rocket">${rocket('L')}</div><div class="liftoff-label">${label}</div>`;
+    layer!.append(el);
+    setTimeout(() => el.remove(), 3200 + i * 180);
+  });
 }
 
 /* ---------- toast + timer ---------- */
