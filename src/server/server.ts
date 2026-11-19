@@ -47,7 +47,33 @@ const MIME: Record<string, string> = {
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
   '.map': 'application/json',
+  '.mp4': 'video/mp4',
+  '.vtt': 'text/vtt; charset=utf-8',
+  '.jpg': 'image/jpeg',
 };
+
+/**
+ * Parse a single `bytes=` range. Safari and iOS won't play video from a server that
+ * ignores ranges, so media needs this. Returns null for "no range", 'bad' if unsatisfiable.
+ */
+export function parseRange(header: string | undefined, size: number): { start: number; end: number } | null | 'bad' {
+  if (!header) return null;
+  const m = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
+  if (!m || (m[1] === '' && m[2] === '')) return 'bad';
+  let start: number, end: number;
+  if (m[1] === '') {
+    // suffix: the last N bytes
+    const n = Number(m[2]);
+    if (n === 0) return 'bad';
+    start = Math.max(0, size - n);
+    end = size - 1;
+  } else {
+    start = Number(m[1]);
+    end = m[2] === '' ? size - 1 : Math.min(Number(m[2]), size - 1);
+  }
+  if (start >= size || start > end) return 'bad';
+  return { start, end };
+}
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ'; // no I, L, O
 const RATE = { windowMs: 1000, max: 20 };
 const MAX_MSG_BYTES = 4096;
@@ -119,7 +145,17 @@ export async function startServer(
     }
     try {
       const body = await readFile(file);
-      res.writeHead(200, {
+      const range = parseRange(req.headers.range, body.length);
+      if (range === 'bad') {
+        res.writeHead(416, { 'content-range': `bytes */${body.length}` });
+        res.end();
+        return;
+      }
+      const part = range ? body.subarray(range.start, range.end + 1) : body;
+      res.writeHead(range ? 206 : 200, {
+        ...(range ? { 'content-range': `bytes ${range.start}-${range.end}/${body.length}` } : {}),
+        'accept-ranges': 'bytes',
+        'content-length': part.length,
         'content-type': MIME[extname(file)] ?? 'application/octet-stream',
         'cache-control': path === '/index.html' ? 'no-cache' : 'public, max-age=300',
         'x-content-type-options': 'nosniff',
@@ -128,7 +164,7 @@ export async function startServer(
         'content-security-policy':
           "default-src 'self'; connect-src 'self' ws: wss:; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:",
       });
-      res.end(req.method === 'HEAD' ? undefined : body);
+      res.end(req.method === 'HEAD' ? undefined : part);
     } catch {
       res.writeHead(404, { 'content-type': 'text/plain' });
       res.end('Not found');

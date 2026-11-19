@@ -247,6 +247,24 @@ test('QA: bought items show what you paid; a broke Vet is told to ask the Captai
   await expect(vet.locator('.item[data-animal=elephant]')).toBeAttached();
 });
 
+test('the explainer video is on the home page and the host lobby, and survives lobby updates', async ({ browser }) => {
+  const home = await (await browser.newContext()).newPage();
+  await home.goto('/');
+  const v = home.locator('video.explainer');
+  await expect(v).toHaveAttribute('preload', 'none'); // phones don't download it unless someone presses play
+  await expect(v.locator('track[kind=captions]')).toHaveAttribute('src', '/media/explainer.vtt');
+  await expect(v).toHaveAttribute('poster', '/media/explainer-poster.jpg');
+  const { host, code } = await createGame(browser);
+  await host.getByText('Play the 60-second explainer for everyone').click();
+  const lobbyVideo = host.locator('#explainer-lobby');
+  await expect(lobbyVideo).toBeVisible();
+  // mark the element; a player joining re-renders the lobby and must not replace (and stop) the video
+  await lobbyVideo.evaluate(el => ((el as HTMLVideoElement & { marked?: boolean }).marked = true));
+  await joinGame(browser, code, 'Watcher');
+  await expect(host.locator('.chips')).toContainText('Watcher');
+  expect(await lobbyVideo.evaluate(el => (el as HTMLVideoElement & { marked?: boolean }).marked)).toBe(true);
+});
+
 test('roles reshuffle for mission 2', async ({ browser }) => {
   const { host, players } = await setupMission(browser);
   const before = await Promise.all(players.map(roleOf));

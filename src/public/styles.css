@@ -1498,3 +1498,21 @@ body.projector .mast {
     grid-template-columns: 1fr;
   }
 }
+/* explainer video */
+.explainer-panel {
+  margin-top: 18px;
+}
+.explainer-panel summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+video.explainer {
+  display: block;
+  width: 100%;
+  max-width: 960px;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  margin-top: 12px;
+  border-radius: 14px;
+  background: #000;
+}
