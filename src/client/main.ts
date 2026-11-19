@@ -643,6 +643,7 @@ function missionReport(v: HostView | PlayerView) {
   const mine = v.kind === 'player' ? v.team?.id : undefined;
   const rows = [...r.outcomes].sort((a, b) => b.points - a.points);
   return `<div class="report"><div class="report-in"><div class="title"><small>Mission ${r.round}</small><h2>Mission report</h2><p>Who made it to Mars</p>${terraBar(v)}</div>
+${r.receipt ? `<section class="panel"><h3>Mission Control receipt</h3><p>${esc(r.receipt)}</p></section>` : ''}
 <div class="lb" id="results">${rows
     .map(
       (

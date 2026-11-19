@@ -44,6 +44,8 @@ export interface Picks {
   fuelGrabs: number;
   spent: { vet: number; pilot: number; engineer: number };
   launchedAt?: number;
+  launchMsLeft?: number;
+  lastPurchase?: string;
 }
 export interface Transfer {
   team: string;
@@ -359,6 +361,7 @@ function slot(g: Game, team: string): Picks {
   return g.picks[k];
 }
 function log(g: Game, now: number, team: Team, kind: FeedItem['kind'], text: string) {
+  if (kind !== 'launch') slot(g, team.id).lastPurchase = text.replace(/^bought /, '');
   g.feed.push({ at: now, round: g.round, teamName: team.name, kind, text });
   if (g.feed.length > LIMITS.feedKept) g.feed.splice(0, g.feed.length - LIMITS.feedKept);
 }
@@ -446,6 +449,7 @@ export function launch(g: Game, playerId: string, now: number) {
   const s = slot(g, team.id);
   if (!s.animal || !s.rocket || !s.fuel) fail('You need an animal, a rocket and fuel sent to the mission before you can launch.');
   s.launchedAt = now;
+  s.launchMsLeft = g.endsAt! - now;
   log(g, now, team, 'launch', 'launched! 🚀');
 }
 
