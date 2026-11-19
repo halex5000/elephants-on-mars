@@ -193,3 +193,9 @@ Phone-first glass consoles with one accent per role (Captain brass, Vet green, P
 ## License
 
 MIT. See `LICENSE`.
+
+### Solo practice
+
+Create a game, open its join link in a second tab (or on your phone), and join as yourself. In the host lobby, turn **Bots: on** and choose **Fill my team**. With the default team size, one player gets three Scouts. To practice with a larger group, enter a count and choose **Add bots**. Each room allows up to 40. Turning bots off in the lobby removes the practice seats.
+
+Make teams and start a mission as usual. Scouts appear as 🤖 in rosters and the final report. They take 1–4 game seconds between decisions and use ordinary player accounts and role views. In a practice crew, the team radio automatically shares its purchased animal’s size and rocket’s fuel requirement. The host can give a waiting human a Scout’s seat through **Restore seat**, even during a mission. The human keeps their name and takes over the role and its current wallet. Scouts stop playing between missions and when the game ends.

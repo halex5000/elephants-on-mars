@@ -5,7 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { startServer } from '../../src/server/server.js';
 import { fastClock, host, join, type Client } from '../bot.js';
 import { seeded } from '../helpers.js';
-import { marketBot, type Crew } from './market-bot.js';
+import { marketBot, type Crew } from '../../src/server/market-bot.js';
 
 const speed = 8;
 

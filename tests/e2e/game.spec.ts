@@ -490,3 +490,27 @@ test('closed player tab rejoins on a phone and the host restores the funded Pilo
   await expect(wallet(returning)).toHaveText('$3');
   await expect(host.getByRole('button', { name: 'Add them to teams' })).toHaveCount(0);
 });
+
+test('a phone player takes the Vet seat and lands a cat with three practice bots', async ({ browser }) => {
+  const { host, code } = await createGame(browser, { minutes: 4, income: 10 });
+  await host.getByRole('button', { name: 'Bots: off' }).click();
+  await host.getByLabel('Bot count').fill('4');
+  await host.getByRole('button', { name: 'Add bots' }).click();
+  await host.getByRole('button', { name: 'Make teams (4 players)' }).click();
+  const human = await (await browser.newContext({ viewport: { width: 375, height: 812 } })).newPage();
+  await human.goto(`/join/${code}`);
+  await human.locator('#jname').fill('Alex');
+  await human.getByRole('button', { name: 'Join' }).click();
+  const seats = host.getByLabel('Offline seat');
+  const vet = seats.locator('option').filter({ hasText: /vet/ });
+  await seats.selectOption({ label: await vet.innerText() });
+  await host.getByLabel('Returning player').selectOption({ index: 1 });
+  await host.getByRole('button', { name: 'Restore seat' }).click();
+  await host.getByRole('button', { name: 'Start mission 1' }).click();
+  await human.locator('[data-animal=cat] button').click();
+  await expect(host.getByRole('button', { name: 'Everyone launched. Show results' })).toBeVisible({ timeout: 18000 });
+  await host.getByRole('button', { name: 'Everyone launched. Show results' }).click();
+  await host.getByRole('button', { name: 'End game early' }).click();
+  await expect(human.locator('#winner')).toContainText('10 points');
+  await expect(human.locator('.lb')).toContainText('🤖 Scout');
+});

@@ -21,6 +21,7 @@ const fail = (msg: string): never => {
 export type Rng = () => number;
 
 export interface Player {
+  bot?: boolean;
   id: string;
   name: string;
   token: string;
@@ -70,6 +71,7 @@ function resetListing(market: Market, kind: keyof Listings, id: string, now: num
 }
 
 export interface Game {
+  botsEnabled?: boolean;
   code: string;
   hostToken: string;
   createdAt: number;
@@ -153,6 +155,28 @@ export function addPlayer(g: Game, id: string, token: string, rawName: string, n
   return p;
 }
 
+export function setBots(g: Game, enabled: boolean) {
+  if (g.phase !== 'lobby' || typeof enabled !== 'boolean') fail('Change practice mode in the lobby.');
+  g.botsEnabled = enabled;
+  if (!enabled) g.players = g.players.filter(p => !p.bot);
+}
+
+export function addPracticeBots(g: Game, requested: number | 'fill', teamSize: number, now: number, key: () => string) {
+  if (!g.botsEnabled || g.phase !== 'lobby') fail('Enable practice bots in the lobby first.');
+  if (!Number.isInteger(teamSize) || teamSize < 1 || teamSize > 8) fail('Choose a team size from 1 to 8.');
+  const count = requested === 'fill' ? (teamSize - (g.players.length % teamSize)) % teamSize : requested;
+  if (!count && requested === 'fill') fail('Join a player first or use Add bots for a full team.');
+  const bots = g.players.filter(p => p.bot);
+  if (!Number.isInteger(count) || count < 1 || count + bots.length > 40) fail('Choose up to 40 practice bots per game.');
+  if (g.players.length + count > LIMITS.maxPlayers) fail('This game is full.');
+  const names = new Set(bots.map(p => p.name));
+  let serial = 1;
+  for (let i = 0; i < count; i++) {
+    while (names.has(`🤖 Scout ${serial}`)) serial++;
+    addPlayer(g, `b_${key()}`, key(), `🤖 Scout ${serial++}`, now).bot = true;
+  }
+}
+
 // The returning tab keeps its existing login; retiring the old registration revokes its token.
 export function swapSeat(g: Game, offlineId: string, newcomerId: string) {
   if (!['teams', 'play', 'results'].includes(g.phase)) fail('Seats can only be restored after teams are made and before the game ends.');
@@ -162,7 +186,7 @@ export function swapSeat(g: Game, offlineId: string, newcomerId: string) {
   if (!old || !seat) throw new GameError('Choose a player with a seat.');
   if (!newcomer || teamOf(g, newcomerId)) throw new GameError('Choose a player who is waiting for a team.');
   seat.playerId = newcomer.id;
-  newcomer.name = old.name;
+  if (!old.bot) newcomer.name = old.name;
   newcomer.joinedAt = old.joinedAt;
   g.players = g.players.filter(p => p !== old);
 }

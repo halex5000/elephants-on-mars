@@ -15,6 +15,8 @@ export interface Settings {
 
 /* ---------- client -> server ---------- */
 export type Action =
+  | { a: 'setBots'; enabled: boolean }
+  | { a: 'addBots'; count: number | 'fill'; teamSize: number }
   | { a: 'makeTeams'; settings?: Partial<Settings> }
   | { a: 'startRound' }
   | { a: 'endRound' }
@@ -78,7 +80,15 @@ export interface FinalSummary {
   topPoints: number;
   failed: number;
   scrubbed: number;
-  byRound: { team: string; name: string; points: number[]; total: number; wins: number[]; landed: { name: string; emoji: string }[] }[];
+  byRound: {
+    bots?: string[];
+    team: string;
+    name: string;
+    points: number[];
+    total: number;
+    wins: number[];
+    landed: { name: string; emoji: string }[];
+  }[];
 }
 /** fuel = enough fuel has been sent to the mission (or any, if the rocket isn't known yet) */
 export interface TeamStatus {
@@ -129,8 +139,14 @@ export interface Common {
 
 export interface HostView extends Common {
   kind: 'host';
+  botsEnabled?: boolean;
   players: { id: string; name: string; connected: boolean; seated: boolean }[];
-  teams: { id: string; name: string; members: { id: string; name: string; roles: Role[]; connected: boolean }[]; status: TeamStatus }[];
+  teams: {
+    id: string;
+    name: string;
+    members: { bot?: boolean; id: string; name: string; roles: Role[]; connected: boolean }[];
+    status: TeamStatus;
+  }[];
   fuel?: FuelMarket;
 }
 
@@ -158,6 +174,7 @@ export interface PlayerView extends Common {
   kind: 'player';
   me: { id: string; name: string };
   team?: {
+    radio?: { size?: string; need?: number };
     id: string;
     name: string;
     roles: Role[];
