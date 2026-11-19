@@ -5,6 +5,7 @@ import { access, constants, readFile, realpath } from 'node:fs/promises';
 import { basename, dirname, extname, join, resolve, sep } from 'node:path';
 import { randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
+import { practicePlayer } from './practice-player.js';
 import { loadGames, saveGames } from './snapshots.js';
 import * as E from './engine.js';
 import { hostView, playerView, shared } from './views.js';
@@ -190,6 +191,35 @@ export async function startServer(
     }
   }
 
+  const practiceSeats = new Map<string, Map<string, () => void>>();
+  function syncPractice(g: E.Game) {
+    const running = practiceSeats.get(g.code) ?? new Map<string, () => void>();
+    const players = g.botsEnabled && g.phase === 'play' ? g.players.filter(p => p.bot) : [];
+    for (const [id, stop] of running) {
+      if (!players.some(p => p.id === id)) {
+        stop();
+        running.delete(id);
+      }
+    }
+    const addr = server.address();
+    if (addr && typeof addr === 'object') {
+      const host =
+        addr.address === '0.0.0.0'
+          ? '127.0.0.1'
+          : addr.address.includes(':')
+            ? `[${addr.address === '::' ? '::1' : addr.address}]`
+            : addr.address;
+      for (const p of players)
+        if (!running.has(p.id))
+          running.set(
+            p.id,
+            practicePlayer(`ws://${host}:${addr.port}/ws`, { t: 'resume', code: g.code, playerId: p.id, token: p.token }, now, speed),
+          );
+    }
+    if (running.size) practiceSeats.set(g.code, running);
+    else practiceSeats.delete(g.code);
+  }
+
   function schedule(g: E.Game) {
     clearTimeout(timers.get(g.code));
     timers.delete(g.code);
@@ -201,6 +231,7 @@ export async function startServer(
         timers.delete(g.code);
         if (g.phase === 'play' && g.endsAt != null && now() >= g.endsAt) {
           E.endRound(g);
+          syncPractice(g);
           log('round_auto_ended', { code: g.code, round: g.round });
           broadcast(g);
         } else schedule(g);
@@ -227,6 +258,14 @@ export async function startServer(
       return c.playerId;
     };
     switch (action?.a) {
+      case 'setBots':
+        needHost();
+        E.setBots(g, action.enabled);
+        break;
+      case 'addBots':
+        needHost();
+        E.addPracticeBots(g, action.count, action.teamSize, t, token);
+        break;
       case 'makeTeams':
         needHost();
         E.makeTeams(g, rng, action.settings);
@@ -258,7 +297,8 @@ export async function startServer(
       case 'swapSeat': {
         needHost();
         const online = onlinePlayers(g);
-        if (online.has(action.offlineId)) throw new E.GameError('That player is back online.');
+        if (online.has(action.offlineId) && !g.players.find(p => p.id === action.offlineId)?.bot)
+          throw new E.GameError('That player is back online.');
         if (!online.has(action.newcomerId)) throw new E.GameError('The returning player must be connected.');
         E.swapSeat(g, action.offlineId, action.newcomerId);
         break;
@@ -288,6 +328,7 @@ export async function startServer(
       default:
         throw new E.GameError('Unknown action.');
     }
+    if (host && (g.botsEnabled || practiceSeats.has(g.code))) syncPractice(g);
     g.touchedAt = t;
     schedule(g);
     broadcast(g);
@@ -463,7 +504,10 @@ export async function startServer(
     server.listen(opts.port ?? 3000, opts.host ?? '0.0.0.0', () => {
       const addr = server.address();
       const port = typeof addr === 'object' && addr ? addr.port : (opts.port ?? 3000);
-      for (const game of games.values()) schedule(game);
+      for (const game of games.values()) {
+        schedule(game);
+        syncPractice(game);
+      }
       let writing: Promise<void> | undefined;
       const checkpoint = stateFile
         ? setInterval(() => {
@@ -482,6 +526,7 @@ export async function startServer(
         url: `http://127.0.0.1:${port}`,
         games,
         close: async () => {
+          for (const running of practiceSeats.values()) for (const stop of running.values()) stop();
           clearInterval(checkpoint);
           clearInterval(sweep);
           timers.forEach(t => clearTimeout(t));

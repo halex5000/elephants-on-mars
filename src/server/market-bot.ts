@@ -1,6 +1,10 @@
-import type { Client } from '../bot.js';
-import type { Role } from '../../src/shared/protocol.js';
-import { auctionPrice, fuelInPool } from '../../src/shared/market.js';
+import type { Role, PlayerView, Action } from '../shared/protocol.js';
+interface Client {
+  readonly pv: PlayerView;
+  errors: string[];
+  act(action: Action): void;
+}
+import { auctionPrice, fuelInPool } from '../shared/market.js';
 
 export interface Crew {
   team: string;
@@ -22,8 +26,8 @@ const funding: Role[] = ['engineer', 'pilot', 'vet', 'pilot', 'vet', 'engineer',
 const animals = ['cat', 'kangaroo', 'rhino', 'penguin', 'gorilla', 'elephant', 'rabbit', 'croc', 'hippo', 'giraffe'];
 
 // Each role acts from its own WebSocket view. Observe the last action before sending another.
-export function marketBot(client: Client, crew: Crew, variant: number, clock: () => number, adaptive = false) {
-  let next = 0,
+export function marketBot(client: Client, crew: Crew, variant: number, clock: () => number, adaptive = false, reaction?: () => number) {
+  let next = reaction ? clock() + reaction() : 0,
     dollarsSent = 0,
     errorIndex = client.errors.length;
   let confirmed: (() => boolean) | undefined;
@@ -53,7 +57,7 @@ export function marketBot(client: Client, crew: Crew, variant: number, clock: ()
     const now = clock();
     if (!team || !consoles || !v.endsAt || now >= v.endsAt || team.status.launched || now < next) return;
     // Vary reaction times by team, role and action; retry stale prices on the next decision.
-    next = now + 900 + ((variant * 271 + Math.floor(now % 997)) % 1100);
+    next = now + (reaction?.() ?? 900 + ((variant * 271 + Math.floor(now % 997)) % 1100));
     if (confirmed && !confirmed()) return;
     confirmed = undefined;
     const balance = (role: Role) => team.roster.find(r => r.role === role)!.balance;

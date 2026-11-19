@@ -68,6 +68,9 @@ export function shared(g: Game, now: number, speed = 1): Shared {
         return {
           team: s.team,
           name: s.name,
+          bots: g.botsEnabled
+            ? g.teams.find(t => t.id === s.team)?.members.flatMap(m => g.players.filter(p => p.bot && p.id === m.playerId).map(p => p.name))
+            : undefined,
           points: pts,
           total: s.points,
           wins: pts.flatMap((p, i) => (p > 0 && p === best[i] ? [i + 1] : [])),
@@ -115,12 +118,19 @@ export function hostView(g: Game, now: number, pres: Presence, sh: Shared = shar
   return {
     ...sh.common,
     kind: 'host',
+    botsEnabled: g.botsEnabled,
     players: g.players.map(p => ({ id: p.id, name: p.name, connected: pres.isConnected(p.id), seated: !!teamOf(g, p.id) })),
     teams: g.teams.map(t => ({
       id: t.id,
       name: t.name,
       status: status(g, t.id),
-      members: t.members.map(m => ({ id: m.playerId, name: name(m.playerId), roles: m.roles, connected: pres.isConnected(m.playerId) })),
+      members: t.members.map(m => ({
+        id: m.playerId,
+        name: name(m.playerId),
+        roles: m.roles,
+        bot: g.players.find(p => p.id === m.playerId)?.bot,
+        connected: pres.isConnected(m.playerId),
+      })),
     })),
     fuel: g.phase === 'play' ? fuelMarket(g) : undefined,
   };
@@ -147,6 +157,10 @@ export function playerView(g: Game, playerId: string, now: number, sh: Shared = 
   if (g.phase !== 'play') return base;
 
   const p = picksFor(g, team.id, g.round);
+  // Practice crews automatically radio their own purchased payload size and fuel order.
+  if (g.botsEnabled && team.members.some(m => g.players.some(p => p.id === m.playerId && p.bot))) {
+    base.team.radio = { size: p.animal ? animalById(p.animal)?.size : undefined, need: p.rocket ? rocketById(p.rocket)?.fuel : undefined };
+  }
   const c: NonNullable<PlayerView['console']> = {};
   if (roles.includes('captain')) {
     const a = p.animal ? animalById(p.animal) : undefined;

@@ -80,6 +80,7 @@ let clockSkew = 0,
   viewServerNow = 0;
 let fatal = '';
 const ui = {
+  botCount: '1',
   name: '',
   offlineId: '',
   newcomerId: '',
@@ -418,7 +419,7 @@ function seatRecovery(v: HostView) {
   const waiting = v.players.filter(p => p.connected && !p.seated);
   const offline = v.teams.flatMap(t =>
     t.members
-      .filter(m => !m.connected)
+      .filter(m => !m.connected || m.bot)
       .map(m => ({
         id: m.id,
         label: `${m.name} · ${t.name} · ${m.roles.join(', ')}`,
@@ -428,7 +429,7 @@ function seatRecovery(v: HostView) {
   const option = (id: string, label: string, selected: string) =>
     `<option value="${esc(id)}" ${id === selected ? 'selected' : ''}>${esc(label)}</option>`;
   return `<form class="row" data-form="swapSeat">
-    <label class="f">Offline seat<select required name="offlineId" data-k="offlineId"><option value="">Choose a seat</option>${offline.map(p => option(p.id, p.label, ui.offlineId)).join('')}</select></label>
+    <label class="f">Offline seat or practice bot<select required name="offlineId" data-k="offlineId"><option value="">Choose a seat</option>${offline.map(p => option(p.id, p.label, ui.offlineId)).join('')}</select></label>
     <label class="f">Returning player<select required name="newcomerId" data-k="newcomerId"><option value="">Choose a player</option>${waiting.map(p => option(p.id, `${p.name} · ${p.id.slice(-6)}`, ui.newcomerId)).join('')}</select></label>
     <button>Restore seat</button></form>`;
 }
@@ -453,7 +454,7 @@ function hostPage(v: HostView): string {
 
   const chips = `<div class="chips">${v.players.map(p => `<span class="${p.connected ? '' : 'off'}">${esc(p.name)}${v.phase === 'lobby' || v.phase === 'teams' ? ` <button class="ghost sm" data-act="removePlayer" data-id="${esc(p.id)}" aria-label="Remove ${esc(p.name)}">✕</button>` : ''}</span>`).join('') || '<span class="mut">Nobody yet</span>'}</div>`;
   const bar = `<section class="band hostbar ${v.phase === 'lobby' ? '' : 'compact'}"><div class="wrap stack"><div class="top"><div class="joinwho">${joinQr(v, joinUrl)}<div><span class="sm mut">Scan, or join at ${esc(location.host)} with code</span><div class="joincode">${esc(v.code)}</div></div></div><div class="stack" style="text-align:right"><div class="row" style="justify-content:flex-end"><a class="btnlink ghost sm" href="/screen/${esc(v.code)}" target="_blank" rel="noopener">Open big screen</a><button class="ghost sm" data-act="copy" data-v="${esc(joinUrl)}">Copy join link</button></div><span class="sm mut">Host controls, only you see these</span></div></div>
-${ctl}${un.length && v.phase !== 'lobby' && v.phase !== 'final' ? `<div class="row"><span>${plural(un.length, 'player is', 'players are')} waiting without a team.</span><button class="ghost" data-act="seatLatecomers">Add them to teams</button></div>` : ''}${seatRecovery(v)}${v.phase === 'lobby' ? chips : ''}</div></section>`;
+${ctl}${v.phase === 'lobby' ? `<div class="row"><button class="ghost" aria-pressed="${!!v.botsEnabled}" data-act="setBots">Bots: ${v.botsEnabled ? 'on' : 'off'}</button>${v.botsEnabled ? `<label class="f">Bot count<input type="number" min="1" max="40" data-k="botCount" value="${esc(ui.botCount)}"></label><button data-act="addBots">Add bots</button><button class="ghost" data-act="fillBots">Fill my team</button>` : ''}</div>` : ''}${un.length && v.phase !== 'lobby' && v.phase !== 'final' ? `<div class="row"><span>${plural(un.length, 'player is', 'players are')} waiting without a team.</span><button class="ghost" data-act="seatLatecomers">Add them to teams</button></div>` : ''}${seatRecovery(v)}${v.phase === 'lobby' ? chips : ''}</div></section>`;
 
   let body = '';
   if (v.phase === 'lobby')
@@ -567,6 +568,7 @@ ${ui.help ? `<p class="sm" style="margin:10px 4px 0">${RI[tab].d}</p>` : ''}
 <div class="c-stats"><div><span class="num tmr" role="timer" aria-label="Time left"></span><small>until close</small></div><i></i><div class="task">${TASK[tab]}</div><i></i><div><span class="num cash">$${wallet}</span><small>you have</small></div></div>
 ${t.roles.length > 1 ? `<div class="tabs">${t.roles.map(r => `<button data-act="tab" data-r="${r}" class="${r === tab ? 'on' : ''}" aria-pressed="${r === tab}">${RI[r].t}</button>`).join('')}</div>` : ''}
 ${body}
+${t.radio ? `<p class="sm"><b>Team radio</b> · ${t.radio.size ? `Payload size ${esc(t.radio.size)}` : 'Waiting for animal'} · ${t.radio.need ? `${t.radio.need} fuel requested` : 'Waiting for rocket'}</p>` : ''}
 ${t.status.launched ? '<p class="locked pill">Launched. Results come when the mission closes.</p>' : secsLeft() <= 0 ? `<p class="locked pill bad">Time's up</p>` : ''}
 <div class="status"><small>Mission status</small><div class="dots">${statusDot(t.status.animal, 'Animal', 'on board', t.status.animal ? animalIcon : paw())}${statusDot(t.status.rocket, 'Rocket', 'bought', rocketGlyph())}${statusDot(t.status.fuel, 'Fuel', 'enough loaded', drop())}</div></div>
 </div>
@@ -663,7 +665,7 @@ function finalReport(v: HostView | PlayerView, projector = false) {
   return `<div class="report"><div class="report-in"><div class="title"><small>Final</small><h2>Mission report</h2><p>Notable contributions to biodiversity on Mars</p>
 <p class="m0" style="margin-top:14px;font-size:20px"><b id="winner">${f.winner ? `${esc(f.winner)} wins with ${f.topPoints} points` : 'Mars is still waiting'}</b></p>${terraBar(v)}
 ${f.failed || f.scrubbed ? `<p class="sm m0" style="margin-top:8px;color:#ffd9c7">${[f.failed ? `${plural(f.failed, "rocket didn't", "rockets didn't")} make it` : '', f.scrubbed ? `${plural(f.scrubbed, 'mission', 'missions')} never launched` : ''].filter(Boolean).join(', and ')}.</p>` : ''}</div>
-<div class="lb">${f.byRound.map((t, i) => `<div class="r ${t.team === mine ? 'me' : ''}"><span class="rank">${i + 1}</span><span class="name">${esc(t.name)}</span><span class="zoo">${t.landed.map(a => a.emoji).join('')}</span><span class="num pts">${t.total}</span></div>`).join('')}</div></div></div>
+<div class="lb">${f.byRound.map((t, i) => `<div class="r ${t.team === mine ? 'me' : ''}"><span class="rank">${i + 1}</span><span class="name">${esc(t.name)}${t.bots?.length ? `<small> ${t.bots.map(esc).join(', ')}</small>` : ''}</span><span class="zoo">${t.landed.map(a => a.emoji).join('')}</span><span class="num pts">${t.total}</span></div>`).join('')}</div></div></div>
 ${
   projector
     ? ''
@@ -781,6 +783,13 @@ document.addEventListener('click', e => {
       ui.confirm = 0;
       act({ a: 'launch' });
       toast('🚀 Launched! Results at the end of the mission.');
+      break;
+    case 'setBots':
+      if (view?.kind === 'host') act({ a: 'setBots', enabled: !view.botsEnabled });
+      break;
+    case 'fillBots':
+    case 'addBots':
+      act({ a: 'addBots', count: d.act === 'fillBots' ? 'fill' : Number(ui.botCount), teamSize: Number(ui.set.teamSize) });
       break;
     case 'makeTeams':
       act({
