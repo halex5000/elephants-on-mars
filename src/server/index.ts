@@ -39,5 +39,11 @@ const shutdown = (sig: string) => {
     });
   setTimeout(() => process.exit(1), 10_000).unref();
 };
+// Every game lives in this one process, so a stray exception in a timer callback would end
+// every game on the server. Log it with its stack and keep serving instead.
+const crashLog = (event: string) => (err: unknown) =>
+  console.error(JSON.stringify({ t: new Date().toISOString(), event, err: err instanceof Error ? err.stack : String(err) }));
+process.on('uncaughtException', crashLog('uncaught_exception'));
+process.on('unhandledRejection', crashLog('unhandled_rejection'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
