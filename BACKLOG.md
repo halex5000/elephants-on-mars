@@ -4,6 +4,8 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 
 ## Handoff note
 
+**N10 · Dex · 2026-11-19.** Optional periodic JSON checkpoints and timer restoration are ready for review. Recovery tests cover reconnects and deadlines. To enable on Fly, mount writable persistent storage and set `STATE_FILE`. The production configuration is unchanged.
+
 *Last updated 2026-11-19 by Claude.*
 
 - **Done this session:** architecture and scale review (see DECISIONS, 2026-11-19 entries). Added `HOST_PASSCODE` (server + client + tests), `fly.toml` (primary host) and `render.yaml`, and README deploy steps. Clean-folder build of the Docker steps passes. A real `docker build` still hasn't run (no daemon here); Fly's remote builder will be the first.
@@ -29,7 +31,7 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 | N6 | Build and run the Docker image locally | `docker compose up --build` with OrbStack. Never built by a worker yet; Fly's remote builder or CI will be first. |
 | N7 | Separate big-screen URL for the projector | e.g. `/screen/CODE`: read-only shared screen without host controls, so the host can screen-share it cleanly. |
 | N8 | Launch moment | One orchestrated animation when a team launches (rocket lift-off on the big screen). Respect reduced motion. |
-| N10 | State snapshots | Save game state every few seconds (file on Fly, or skip) and reload on boot, so a crash or redeploy doesn't end a live game. Clients already reconnect and resume. Touches `server.ts`. |
+| N10 | State snapshots (Dex, in review) | Save game state every few seconds (file on Fly, or skip) and reload on boot, so a crash or redeploy doesn't end a live game. Clients already reconnect and resume. Touches `server.ts`. |
 | N11 | 50-team play: market sectors + big screen | Group teams into sectors of ~6–8 that share a market, or scale listings with team count. Big screen needs sector summaries / top 10 instead of 50 rows. Design doc first: `docs/scale-50-teams.md`. Pairs with N3. |
 | N12 | QR code to join on the big screen | Generate the QR in the client (no third-party service). Cheap, high delight on phones. |
 | N9 | Export results | The original sends leaderboards and screenshots after the event. A "Copy results" / download of the final report. |
