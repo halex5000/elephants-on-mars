@@ -4,20 +4,20 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 
 ## Handoff note
 
-_Last updated 2026-11-19 by Dex._
+_Last updated 2026-11-19 by Claude. Replace this block when you hand off; don't prepend to it._
 
-- **N13** is on main (#6). The realistic default-budget runs found no one-minute wait from first fuel attempt in the three 50-team rooms.
-- **Auction follow-up** compares adaptive crews and extra listings in four matched conditions. Across 300 team-missions per condition: baseline 260 landed, adaptive crews 300, extra copies 300, both 300. Extra copies with fixed targets scored highest. The optional server setting is off by default. Results and reproduction steps live in [the market rehearsal](tests/load/README.md).
-- **Infrastructure audit** is waiting on an AWS CDK release containing [the upstream minimatch fix](https://github.com/aws/aws-cdk/pull/39595). CDK 2.277.0 bundles minimatch 10.2.6, including after an npm override. The suggested downgrade to CDK 2.239.0 introduced four high findings. Root audit is clean and all 11 infrastructure tests passed on the original dependency. Recheck both audits after upgrading.
-- **Also on main (Claude):** N7 big screen `/screen/CODE`, N8 launch moment, N9 Copy results, N12 QR join, one-click manual Fly deploy (Actions → Deploy to Fly), and a fix for roles sometimes not reshuffling (#11).
-- **Next for Alex** is deploying (Actions → Deploy to Fly) and a human playtest before enabling any market rule change.
+- **Live:** https://elephants-on-mars.fly.dev (deployed from Actions → Deploy to Fly; 1 machine; host passcode enforced). Main is green.
+- **Quality gates are on (#14):** run `npm install` once to get the git hooks. Pre-commit = secret scan + Biome format/lint on staged files; pre-push = typecheck + unit. CI runs `npm run check`. Markdown isn't auto-formatted.
+- **In flight:** Dex → **N14 seat swap** (engine, server, host page). Claude → **L2 accessibility** (player consoles, big screen, CSS, e2e axe checks; stays out of host controls and the server).
+- **Infra audit:** `minimatch` advisory in `/infra` is bundled inside `aws-cdk-lib` (npm overrides can't reach it), deploy-time tooling only. Upgrade CDK once a release includes the upstream fix, then rerun both audits.
+- **Next for Alex:** phone-on-cell-data smoke test on the live URL, then the playtest with `docs/playtest.md`.
 
 ## Now
 
 | #   | Item                                                                                                                                                              | Owner | Status |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
-| D1  | First Fly.io deploy (steps in README) and a smoke test from a phone on cell data. Then add the `FLY_API_TOKEN` secret so later deploys are one click from Actions | Alex  | Ready  |
 | N1  | Playtest with real people (4–8 players, 2+ missions); write down what felt slow, confusing or unfair                                                              | Alex  | Ready  |
+| N14 | **Seat swap (Dex):** when a player is offline mid-game, the host moves a newcomer into that seat (same team, roles, wallet) from the host page and the empty newcomer entry goes away. Host-approved only, never by matching names. The old token must stop working. Tests: engine, integration, e2e. Update "Dropped player" in `docs/playtest.md`. | Dex | Ready |
 
 ## Next
 
@@ -34,7 +34,7 @@ _Last updated 2026-11-19 by Dex._
 | #   | Item                                                                   | Notes                                                                                                                                                                                                           |
 | --- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | L1  | Deploy internally at work with CDK (optional now; primary host is Fly) | Needs: VPC ID, allowed CIDRs, ACM cert, required tags, permissions boundary, ECR/Logs reachability (NAT or VPC endpoints), and the company's process for bringing in a public repo. See README "Deploy to AWS". |
-| L2  | Accessibility pass                                                     | Screen-reader labels for medals and status dots, contrast check per role color, keyboard-only play-through.                                                                                                     |
+| L2  | Accessibility pass (Claude, in progress)                               | Screen-reader labels for medals and status dots, contrast check per role color, keyboard-only play-through.                                                                                                     |
 | L3  | Rocket auction contention in huge games                                | With 50 teams, popular rockets stay near full price. Watch after the playtest.                                                                                                                                  |
 | L4  | Keep past game results                                                 | Optional storage layer (file locally, DynamoDB at work). Only if someone actually wants history.                                                                                                                |
 | L5  | Sound                                                                  | Off by default; launch and timer cues.                                                                                                                                                                          |
@@ -42,6 +42,7 @@ _Last updated 2026-11-19 by Dex._
 
 ## Done
 
+- First deploy to Fly (D1) via the one-click workflow; live smoke check passed
 - Launch moment (N8): a rocket lifts off over the shared screen per launch (max 3 at once, "+N more"), fades in place with reduced motion, never replayed on reload
 - N13: default-budget market rehearsals at 2, 25, and 50 teams (#6).
 - Opt-in second auction copy (`EXTRA_LISTING_MIN_TEAMS`, off by default) + adaptive-crew trials (#12, Dex)
