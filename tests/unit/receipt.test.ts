@@ -20,6 +20,6 @@ test('the closest launch uses its own deadline and last purchase even after the 
   const receipt = shared(g, end + 21_000).common.results[0]?.receipt;
   assert.ok(receipt?.startsWith(g.teams[0]!.name));
   assert.match(receipt!, /cat with 2 seconds left/);
-  assert.match(receipt!, /last purchase: .* fuel for \$1/);
+  assert.match(receipt!, /last purchase was .* fuel for \$1/);
   assert.match(receipt!, /landed for 10 points/);
 });

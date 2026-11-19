@@ -9,18 +9,22 @@ export function missionReceipt(g: Game, outcomes: Outcome[]): string | undefined
   });
   const closest = launches.sort((a, b) => a.left - b.left)[0];
   if (!closest) {
-    if (!outcomes.length || outcomes.some(o => o.status !== 'scrubbed')) return;
+    if (!outcomes.length) return;
+    const landed = outcomes.find(o => o.status === 'landed');
+    if (landed) return `${landed.teamName} landed the ${landed.animal!.name.toLowerCase()} for ${landed.points} points.`;
+    const failed = outcomes.find(o => o.status === 'failed');
+    if (failed) return `${failed.teamName} reported: ${failed.message}.`;
     const supplied = outcomes.filter(o => o.animal && o.rocket).length;
     return supplied
       ? `${supplied} of ${outcomes.length} crews had both an animal and a rocket when the mission closed. What held up the launch?`
-      : undefined;
+      : 'The launch pad stayed quiet this mission. Where did the crew spend its time?';
   }
   const { outcome, picks, left } = closest;
   const seconds = Math.ceil(left / 1000);
   const timing = left <= 10_000 ? ` with ${seconds} second${seconds === 1 ? '' : 's'} left` : '';
   const cargo = outcome.animal!.name.toLowerCase();
   const launch = `${outcome.teamName} launched the ${cargo}${timing}.`;
-  const purchase = picks.lastPurchase ? ` Their last purchase: ${picks.lastPurchase}.` : '';
+  const purchase = picks.lastPurchase ? ` Their last purchase was ${picks.lastPurchase}.` : '';
   const result = outcome.status === 'landed' ? ` The ${cargo} landed for ${outcome.points} points.` : ` ${outcome.message}.`;
   return launch + purchase + result;
 }
