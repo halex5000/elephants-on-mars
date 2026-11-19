@@ -6,7 +6,13 @@ import type { Role } from '../src/shared/protocol.js';
 /** Deterministic PRNG (mulberry32) so shuffles are reproducible. */
 export function seeded(seed = 42): E.Rng {
   let a = seed;
-  return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 export const T0 = 1_000_000;
@@ -38,14 +44,23 @@ export function fund(g: E.Game, team: number, amounts: Partial<Record<Role, numb
 /** Get `units` of fuel onto the mission: buy from the pool into stock (waiting for it to fill), then send it over. Returns the time after. */
 export function gatherFuel(g: E.Game, team: number, units: number, from: number): number {
   let t = from;
-  const eng = holder(g, team, 'engineer'), id = tid(g, team);
-  while (E.picksFor(g, id, g.round).fuel + E.fuelStockOf(g, id) < units) { t += 30_000; E.buyFuel(g, eng, 1, t); }
+  const eng = holder(g, team, 'engineer'),
+    id = tid(g, team);
+  while (E.picksFor(g, id, g.round).fuel + E.fuelStockOf(g, id) < units) {
+    t += 30_000;
+    E.buyFuel(g, eng, 1, t);
+  }
   while (E.picksFor(g, id, g.round).fuel < units) E.sendFuel(g, eng, t);
   return t;
 }
 
 /** A whole mission for one team, at settled (cheapest) prices. */
-export function mission(g: E.Game, team: number, m: { animal?: string; rocket?: string; fuel?: number; launch?: boolean }, at = T0 + SETTLED) {
+export function mission(
+  g: E.Game,
+  team: number,
+  m: { animal?: string; rocket?: string; fuel?: number; launch?: boolean },
+  at = T0 + SETTLED,
+) {
   let t = at;
   if (m.animal) E.buyAnimal(g, holder(g, team, 'vet'), m.animal, Infinity, t);
   if (m.rocket) E.buyRocket(g, holder(g, team, 'pilot'), m.rocket, Infinity, t);

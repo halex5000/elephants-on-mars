@@ -18,7 +18,9 @@ const MAX_LAUNCH_MS = Number(process.env.MAX_LAUNCH_MS ?? 30000);
 const clock = process.env.LOAD_URL ? Date.now : fastClock(20);
 
 const publicDir = resolve(dirname(fileURLToPath(import.meta.url)), '../../dist/public');
-const own = process.env.LOAD_URL ? null : await startServer({ port: 0, host: '127.0.0.1', publicDir, log: () => {}, now: clock, speed: process.env.LOAD_URL ? 1 : 20 });
+const own = process.env.LOAD_URL
+  ? null
+  : await startServer({ port: 0, host: '127.0.0.1', publicDir, log: () => {}, now: clock, speed: process.env.LOAD_URL ? 1 : 20 });
 const url = process.env.LOAD_URL ?? own!.url;
 const plans = ['giraffe', 'croc', 'cat', 'rabbit', 'kangaroo', 'penguin', 'gorilla', 'rhino', 'hippo', 'cat'];
 
@@ -28,21 +30,42 @@ async function runGame(n: number, label: string) {
   const code = h.creds!.code;
   const t0 = performance.now();
   const players: Client[] = [];
-  for (let i = 0; i < n; i += 25) players.push(...await Promise.all(Array.from({ length: Math.min(25, n - i) }, (_, k) => join(url, code, `Bot ${i + k}`, playBot(radios, (r, ti) => plans[(r + ti) % plans.length]!, { clock }), false))));
+  for (let i = 0; i < n; i += 25)
+    players.push(
+      ...(await Promise.all(
+        Array.from({ length: Math.min(25, n - i) }, (_, k) =>
+          join(
+            url,
+            code,
+            `Bot ${i + k}`,
+            playBot(radios, (r, ti) => plans[(r + ti) % plans.length]!, { clock }),
+            false,
+          ),
+        ),
+      )),
+    );
   await h.until(() => h.hv.players.length === n, 20000, 'all joined');
   const joinMs = performance.now() - t0;
   h.act({ a: 'makeTeams', settings: { rounds: ROUNDS, minutes: 10, income: 40 } });
   await h.until(() => h.hv.phase === 'teams', 10000, 'teams');
   const launchTimes: number[] = [];
-  let landed = 0, total = 0;
+  let landed = 0,
+    total = 0;
   for (let r = 1; r <= ROUNDS; r++) {
     const s = performance.now();
     h.act({ a: 'startRound' });
-    await h.until(() => h.hv.phase === 'play' && h.hv.teams.every(t => t.status.launched), MAX_LAUNCH_MS * 2, `${label} r${r} all launched`);
+    await h.until(
+      () => h.hv.phase === 'play' && h.hv.teams.every(t => t.status.launched),
+      MAX_LAUNCH_MS * 2,
+      `${label} r${r} all launched`,
+    );
     launchTimes.push(performance.now() - s);
     h.act({ a: 'endRound' });
     await h.until(() => h.hv.phase === 'results' && h.hv.results.length === r, 10000, 'results');
-    for (const o of h.hv.results[r - 1]!.outcomes) { total++; if (o.status === 'landed') landed++; }
+    for (const o of h.hv.results[r - 1]!.outcomes) {
+      total++;
+      if (o.status === 'landed') landed++;
+    }
   }
   h.act({ a: 'finish' });
   await h.until(() => h.hv.phase === 'final', 10000, 'final');
@@ -51,15 +74,42 @@ async function runGame(n: number, label: string) {
   const all = players.flatMap(p => p.errors);
   const collisions = all.filter(e => MARKET.test(e)).length;
   const errors = all.filter(e => !MARKET.test(e) && !/Slow down/.test(e));
-  players.forEach(p => p.close()); h.close();
-  return { label, players: n, teams: total / ROUNDS, joinMs: Math.round(joinMs), launchMs: launchTimes.map(Math.round), landed, total, errors, collisions };
+  players.forEach(p => p.close());
+  h.close();
+  return {
+    label,
+    players: n,
+    teams: total / ROUNDS,
+    joinMs: Math.round(joinMs),
+    launchMs: launchTimes.map(Math.round),
+    landed,
+    total,
+    errors,
+    collisions,
+  };
 }
 
 const started = performance.now();
-const results = await Promise.all([runGame(PLAYERS, 'big'), ...Array.from({ length: SIDE_GAMES }, (_, i) => runGame(SIDE_SIZE, `side${i + 1}`))]);
+const results = await Promise.all([
+  runGame(PLAYERS, 'big'),
+  ...Array.from({ length: SIDE_GAMES }, (_, i) => runGame(SIDE_SIZE, `side${i + 1}`)),
+]);
 const mem = process.memoryUsage();
-console.table(results.map(r => ({ game: r.label, players: r.players, teams: r.teams, 'join ms': r.joinMs, 'all launched ms': r.launchMs.join(' / '), landed: `${r.landed}/${r.total}`, 'market collisions': r.collisions, errors: r.errors.length })));
-console.log(`total ${Math.round(performance.now() - started)} ms, ${PLAYERS + SIDE_GAMES * SIDE_SIZE} players, rss ${Math.round(mem.rss / 1e6)} MB${own ? ' (server in-process)' : ''}`);
+console.table(
+  results.map(r => ({
+    game: r.label,
+    players: r.players,
+    teams: r.teams,
+    'join ms': r.joinMs,
+    'all launched ms': r.launchMs.join(' / '),
+    landed: `${r.landed}/${r.total}`,
+    'market collisions': r.collisions,
+    errors: r.errors.length,
+  })),
+);
+console.log(
+  `total ${Math.round(performance.now() - started)} ms, ${PLAYERS + SIDE_GAMES * SIDE_SIZE} players, rss ${Math.round(mem.rss / 1e6)} MB${own ? ' (server in-process)' : ''}`,
+);
 
 const problems = results.flatMap(r => [
   ...(r.landed !== r.total ? [`${r.label}: only ${r.landed}/${r.total} landed`] : []),
@@ -67,5 +117,8 @@ const problems = results.flatMap(r => [
   ...r.launchMs.filter(ms => ms > MAX_LAUNCH_MS).map(ms => `${r.label}: a round took ${Math.round(ms)} ms to fully launch`),
 ]);
 await own?.close();
-if (problems.length) { console.error(`LOAD TEST FAILED\n${problems.join('\n')}`); process.exit(1); }
+if (problems.length) {
+  console.error(`LOAD TEST FAILED\n${problems.join('\n')}`);
+  process.exit(1);
+}
 console.log('LOAD TEST PASSED');

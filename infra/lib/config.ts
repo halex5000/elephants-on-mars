@@ -23,14 +23,26 @@ export interface GameConfig {
   stackName: string;
 }
 
-const list = (v: unknown) => (typeof v === 'string' ? v.split(',').map(s => s.trim()).filter(Boolean) : Array.isArray(v) ? v.map(String) : undefined);
+const list = (v: unknown) =>
+  typeof v === 'string'
+    ? v
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+    : Array.isArray(v)
+      ? v.map(String)
+      : undefined;
 
 export function readConfig(app: App): GameConfig {
   const ctx = (k: string) => app.node.tryGetContext(k) as unknown;
   const desired = Number(ctx('desiredCount') ?? 1);
-  if (desired !== 0 && desired !== 1) throw new Error('desiredCount must be 0 or 1: game state is in memory, so two tasks would split games between them.');
+  if (desired !== 0 && desired !== 1)
+    throw new Error('desiredCount must be 0 or 1: game state is in memory, so two tasks would split games between them.');
   const tags: Record<string, string> = {};
-  for (const pair of list(ctx('tags')) ?? []) { const [k, ...v] = pair.split('='); if (k && v.length) tags[k] = v.join('='); }
+  for (const pair of list(ctx('tags')) ?? []) {
+    const [k, ...v] = pair.split('=');
+    if (k && v.length) tags[k] = v.join('=');
+  }
   return {
     vpcId: (ctx('vpcId') as string) || undefined,
     subnetIds: list(ctx('subnetIds')),

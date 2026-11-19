@@ -23,7 +23,9 @@ const animals = ['cat', 'kangaroo', 'rhino', 'penguin', 'gorilla', 'elephant', '
 
 // Each role acts from its own WebSocket view. Observe the last action before sending another.
 export function marketBot(client: Client, crew: Crew, variant: number, clock: () => number, adaptive = false) {
-  let next = 0, dollarsSent = 0, errorIndex = client.errors.length;
+  let next = 0,
+    dollarsSent = 0,
+    errorIndex = client.errors.length;
   let confirmed: (() => boolean) | undefined;
   const desired = animals[variant % animals.length]!;
   const unexpected: string[] = [];
@@ -45,7 +47,9 @@ export function marketBot(client: Client, crew: Crew, variant: number, clock: ()
 
   function step() {
     observe();
-    const v = client.pv, team = v.team, consoles = v.console;
+    const v = client.pv,
+      team = v.team,
+      consoles = v.console;
     const now = clock();
     if (!team || !consoles || !v.endsAt || now >= v.endsAt || team.status.launched || now < next) return;
     // Vary reaction times by team, role and action; retry stale prices on the next decision.
@@ -76,8 +80,10 @@ export function marketBot(client: Client, crew: Crew, variant: number, clock: ()
       // Once a minute has elapsed, accept an affordable smaller payload. It also
       // fits a rocket the Pilot may already be buying for the original target.
       if (adaptive && !vet.bought && now >= v.endsAt - 180_000 && auctionPrice(preferred.base, preferred.resetAt, now) > balance('vet')) {
-        animal = vet.animals.filter(a => sizes.indexOf(a.size) <= sizes.indexOf(preferred.size)
-          && auctionPrice(a.base, a.resetAt, now) <= balance('vet')).sort((a, b) => b.points - a.points)[0] ?? preferred;
+        animal =
+          vet.animals
+            .filter(a => sizes.indexOf(a.size) <= sizes.indexOf(preferred.size) && auctionPrice(a.base, a.resetAt, now) <= balance('vet'))
+            .sort((a, b) => b.points - a.points)[0] ?? preferred;
       }
       if (vet.bought) {
         animal = vet.animals.find(a => a.id === vet.bought)!;
@@ -94,9 +100,11 @@ export function marketBot(client: Client, crew: Crew, variant: number, clock: ()
       const pilot = consoles.pilot;
       if (pilot.bought) crew.need = pilot.rockets.find(r => r.id === pilot.bought)!.fuel;
       else {
-        const fit = pilot.rockets.filter(r => sizes.indexOf(r.size) >= sizes.indexOf(crew.size!))
+        const fit = pilot.rockets
+          .filter(r => sizes.indexOf(r.size) >= sizes.indexOf(crew.size!))
           .map(rocket => ({ rocket, price: auctionPrice(rocket.base, rocket.resetAt, now) }))
-          .filter(r => r.price <= balance('pilot')).sort((a, b) => a.rocket.fuel - b.rocket.fuel)[0];
+          .filter(r => r.price <= balance('pilot'))
+          .sort((a, b) => a.rocket.fuel - b.rocket.fuel)[0];
         if (fit) {
           crew.rocketAttempts++;
           client.act({ a: 'buyRocket', rocket: fit.rocket.id, maxPrice: fit.price });

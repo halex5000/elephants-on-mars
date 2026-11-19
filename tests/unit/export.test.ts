@@ -48,7 +48,8 @@ describe('results export', () => {
 
   test('a game where nobody landed anything says so instead of naming a winner', () => {
     const g = started(4, { rounds: 1 });
-    E.endRound(g); E.finish(g);
+    E.endRound(g);
+    E.finish(g);
     const text = resultsText(hostView(g, T0, pres));
     assert.match(text, /No team landed an animal\. Mars is still waiting\./);
     assert.doesNotMatch(text, /🏆/);

@@ -13,7 +13,8 @@ const now = speed === 1 ? Date.now : () => startedAt + (Date.now() - startedAt) 
 if (speed !== 1) console.log(JSON.stringify({ t: new Date().toISOString(), event: 'game_speed', speed }));
 
 const app = await startServer({
-  now, speed,
+  now,
+  speed,
   port: Number(process.env.PORT ?? 3000),
   host: process.env.HOST ?? '0.0.0.0',
   publicDir,
@@ -29,7 +30,13 @@ const shutdown = (sig: string) => {
   if (stopping) return;
   stopping = true;
   console.log(JSON.stringify({ t: new Date().toISOString(), event: 'shutdown', sig }));
-  app.close().then(() => process.exit(0)).catch(err => { console.error('Shutdown failed', err); process.exit(1); });
+  app
+    .close()
+    .then(() => process.exit(0))
+    .catch(err => {
+      console.error('Shutdown failed', err);
+      process.exit(1);
+    });
   setTimeout(() => process.exit(1), 10_000).unref();
 };
 process.on('SIGTERM', () => shutdown('SIGTERM'));

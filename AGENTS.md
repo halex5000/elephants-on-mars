@@ -4,11 +4,11 @@ Read this first, whoever you are (Claude, ChatGPT, Codex, or a human). Then read
 
 ## What this is
 
-A playable, faithful homage to MeetMax Games' *Elephants on Mars*, for Alex to run with friends and coworkers. Developed and tested locally on Alex's Mac, published on GitHub, hosted publicly on Fly.io for friends (`HOST_PASSCODE` set), with an optional internal AWS deploy at work where nothing may leave the corporate network. Details: `README.md`.
+A playable, faithful homage to MeetMax Games' _Elephants on Mars_, for Alex to run with friends and coworkers. Developed and tested locally on Alex's Mac, published on GitHub, hosted publicly on Fly.io for friends (`HOST_PASSCODE` set), with an optional internal AWS deploy at work where nothing may leave the corporate network. Details: `README.md`.
 
 ## The workers
 
-- **Alex** owns priorities and makes the calls in `BACKLOG.md` marked *Decision needed*.
+- **Alex** owns priorities and makes the calls in `BACKLOG.md` marked _Decision needed_.
 - **Claude**, **ChatGPT ("Chattie G")** and **Dex** are interchangeable workers. Either can pick up any item. When one runs out of capacity, the other continues from the handoff note.
 
 ## Source of truth
@@ -35,6 +35,7 @@ npm run infra:test              # CDK guardrails
 ## Quality gates
 
 `npm install` sets up git hooks (via `simple-git-hooks`):
+
 - **pre-commit** (seconds): secret scan on staged files (`secretlint`), then Biome formats and lints them.
 - **pre-push** (~30 s): typecheck + unit tests.
 
@@ -45,7 +46,7 @@ CI runs the same checks (`npm run check`) plus everything else, so it's the real
 1. **Hidden information lives on the server.** Each role may only receive its own slice (`src/server/views.ts`). Game data (`src/server/catalog.ts`) must never be imported by client code. `tests/unit/views.test.ts` enforces this; never weaken those tests to make something pass.
 2. **Nothing leaves the network.** The page loads nothing from outside the server: no CDNs, Google Fonts, analytics or remote images. The content security policy in `src/server/server.ts` enforces it.
 3. **One server process, in-memory state.** Never run more than one task (the CDK stack refuses).
-4. **Faithful to the original.** Rules come from the original game's video and footage where known. Anything guessed is marked *(guess)* in `README.md`. Don't present a guess as fact.
+4. **Faithful to the original.** Rules come from the original game's video and footage where known. Anything guessed is marked _(guess)_ in `README.md`. Don't present a guess as fact.
 5. **TypeScript only. AWS CDK for infrastructure.**
 6. **Tests prove the change.** Fix a bug by first writing a test that fails without the fix. All suites must be green before a handoff.
 

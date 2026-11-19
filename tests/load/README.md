@@ -23,13 +23,13 @@ Rocket failures count server-rejected Pilot purchase requests. Watching an unaff
 [Per-team measurements](market-results.csv) from the local Mac, Node 26.13.0, on the game at `39c8d53`. Each row below pools three independent rooms of that size. Waits are game seconds from first submitted fuel request to first observed purchase among teams that attempted. All attempted purchases eventually yielded a first buy in this sample. Rocket rejections count individual requests, including retries by the same Pilot.
 
 | Teams | Mission | Landings | Teams attempting fuel | Fuel wait, 90th percentile / longest | Rocket rejections / attempts | Teams without rocket |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 2 | 1 | 6/6 | 6 | 0.3 / 0.3 s | 0/6 | 0 |
-| 2 | 2 | 6/6 | 6 | 0.3 / 0.3 s | 0/6 | 0 |
-| 25 | 1 | 75/75 | 75 | 8.7 / 29.0 s | 25/100 | 0 |
-| 25 | 2 | 75/75 | 62 | 4.4 / 17.2 s | 29/104 | 0 |
-| 50 | 1 | 132/150 | 141 | 16.0 / 32.8 s | 105/249 | 6 |
-| 50 | 2 | 130/150 | 104 | 11.1 / 28.8 s | 128/271 | 7 |
+| ----: | ------: | -------: | --------------------: | -----------------------------------: | ---------------------------: | -------------------: |
+|     2 |       1 |      6/6 |                     6 |                          0.3 / 0.3 s |                          0/6 |                    0 |
+|     2 |       2 |      6/6 |                     6 |                          0.3 / 0.3 s |                          0/6 |                    0 |
+|    25 |       1 |    75/75 |                    75 |                         8.7 / 29.0 s |                       25/100 |                    0 |
+|    25 |       2 |    75/75 |                    62 |                         4.4 / 17.2 s |                       29/104 |                    0 |
+|    50 |       1 |  132/150 |                   141 |                        16.0 / 32.8 s |                      105/249 |                    6 |
+|    50 |       2 |  130/150 |                   104 |                        11.1 / 28.8 s |                      128/271 |                    7 |
 
 At 50 teams, zero of the 245 team-missions with a first fuel attempt crossed the proposed one-minute threshold. Counting from when the Engineer was funded and needed fuel, the longest wait was 43.3 seconds. Some teams bought their first fuel late in the mission after securing a rocket late. Of the 55 team-missions without a fuel attempt, 37 landed using carried stock and 18 missed launch.
 
@@ -49,12 +49,12 @@ The JSON includes each crew's points, switch and transfer flags, rocket attempts
 
 Each row pools 300 team-missions across three 50-team rooms and two rounds per room. The baseline is a fresh run alongside the treatments. [Per-trial, per-round measurements](auction-trials.csv) include purchase failures, missing items and fuel waits.
 
-| Strategy and supply | Landed | Total points | Rocket rejections / attempts | Animal switches | Extra dollars to Pilot |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Fixed, one copy | 260/300 | 7,205 | 242/530 | 0 | 0 |
-| Adaptive, one copy | 300/300 | 6,990 | 128/428 | 112 | 2 |
-| Fixed, two copies | 300/300 | 9,150 | 112/412 | 0 | 0 |
-| Adaptive, two copies | 300/300 | 7,260 | 80/380 | 93 | 2 |
+| Strategy and supply  |  Landed | Total points | Rocket rejections / attempts | Animal switches | Extra dollars to Pilot |
+| -------------------- | ------: | -----------: | ---------------------------: | --------------: | ---------------------: |
+| Fixed, one copy      | 260/300 |        7,205 |                      242/530 |               0 |                      0 |
+| Adaptive, one copy   | 300/300 |        6,990 |                      128/428 |             112 |                      2 |
+| Fixed, two copies    | 300/300 |        9,150 |                      112/412 |               0 |                      0 |
+| Adaptive, two copies | 300/300 |        7,260 |                       80/380 |              93 |                      2 |
 
 With the original rules and strategy, 26 of the 40 missed launches lacked at least one purchase, 13 had both purchases but insufficient fuel loaded, and one had both purchases and enough fuel but missed launch. No Engineer who submitted a fuel purchase waited more than 41 game seconds for the first confirmation in any condition.
 

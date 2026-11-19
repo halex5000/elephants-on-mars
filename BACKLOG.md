@@ -4,7 +4,7 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 
 ## Handoff note
 
-*Last updated 2026-11-19 by Dex.*
+_Last updated 2026-11-19 by Dex._
 
 - **N13** is on main (#6). The realistic default-budget runs found no one-minute wait from first fuel attempt in the three 50-team rooms.
 - **Auction follow-up** compares adaptive crews and extra listings in four matched conditions. Across 300 team-missions per condition: baseline 260 landed, adaptive crews 300, extra copies 300, both 300. Extra copies with fixed targets scored highest. The optional server setting is off by default. Results and reproduction steps live in [the market rehearsal](tests/load/README.md).
@@ -14,31 +14,31 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 
 ## Now
 
-| # | Item | Owner | Status |
-|---|---|---|---|
-| D1 | First Fly.io deploy (steps in README) and a smoke test from a phone on cell data. Then add the `FLY_API_TOKEN` secret so later deploys are one click from Actions | Alex | Ready |
-| N1 | Playtest with real people (4–8 players, 2+ missions); write down what felt slow, confusing or unfair | Alex | Ready |
+| #   | Item                                                                                                                                                              | Owner | Status |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
+| D1  | First Fly.io deploy (steps in README) and a smoke test from a phone on cell data. Then add the `FLY_API_TOKEN` secret so later deploys are one click from Actions | Alex  | Ready  |
+| N1  | Playtest with real people (4–8 players, 2+ missions); write down what felt slow, confusing or unfair                                                              | Alex  | Ready  |
 
 ## Next
 
-| # | Item | Notes |
-|---|---|---|
-| N2 | Tune the economy from the playtest | All numbers live in `src/server/catalog.ts` and `src/shared/market.ts`. Economy guardrail tests in `tests/unit/engine.test.ts`. |
-| N3 | Big-game fuel contention | In the 200-player load test, 50 engineers sharing one pool stretched the first mission past 4 minutes (later missions fine thanks to carried-over stock). Options: raise `FUEL.ratePerTeam`, raise the cap, or start each team with a little stock. |
-| N5 | Captain's "Restart" button | The original has one; what it does isn't shown. Ask someone who's played (Alex has played the original). |
-| N6 | Build and run the Docker image locally | `docker compose up --build` with OrbStack. Never built by a worker yet; Fly's remote builder or CI will be first. |
-| N11 | 50-team play: market sectors + big screen | Proposal merged (`docs/scale-50-teams.md`). Default-budget results favor keeping the shared fuel pool. Trial the optional auction treatment (`EXTRA_LISTING_MIN_TEAMS`) with people before enabling it. |
+| #   | Item                                      | Notes                                                                                                                                                                                                                                               |
+| --- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| N2  | Tune the economy from the playtest        | All numbers live in `src/server/catalog.ts` and `src/shared/market.ts`. Economy guardrail tests in `tests/unit/engine.test.ts`.                                                                                                                     |
+| N3  | Big-game fuel contention                  | In the 200-player load test, 50 engineers sharing one pool stretched the first mission past 4 minutes (later missions fine thanks to carried-over stock). Options: raise `FUEL.ratePerTeam`, raise the cap, or start each team with a little stock. |
+| N5  | Captain's "Restart" button                | The original has one; what it does isn't shown. Ask someone who's played (Alex has played the original).                                                                                                                                            |
+| N6  | Build and run the Docker image locally    | `docker compose up --build` with OrbStack. Never built by a worker yet; Fly's remote builder or CI will be first.                                                                                                                                   |
+| N11 | 50-team play: market sectors + big screen | Proposal merged (`docs/scale-50-teams.md`). Default-budget results favor keeping the shared fuel pool. Trial the optional auction treatment (`EXTRA_LISTING_MIN_TEAMS`) with people before enabling it.                                             |
 
 ## Later
 
-| # | Item | Notes |
-|---|---|---|
-| L1 | Deploy internally at work with CDK (optional now; primary host is Fly) | Needs: VPC ID, allowed CIDRs, ACM cert, required tags, permissions boundary, ECR/Logs reachability (NAT or VPC endpoints), and the company's process for bringing in a public repo. See README "Deploy to AWS". |
-| L2 | Accessibility pass | Screen-reader labels for medals and status dots, contrast check per role color, keyboard-only play-through. |
-| L3 | Rocket auction contention in huge games | With 50 teams, popular rockets stay near full price. Watch after the playtest. |
-| L4 | Keep past game results | Optional storage layer (file locally, DynamoDB at work). Only if someone actually wants history. |
-| L5 | Sound | Off by default; launch and timer cues. |
-| L6 | Mobile app | Parked 2026-11-19. If revived: installable web app (PWA) first, Capacitor maybe, native no. |
+| #   | Item                                                                   | Notes                                                                                                                                                                                                           |
+| --- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| L1  | Deploy internally at work with CDK (optional now; primary host is Fly) | Needs: VPC ID, allowed CIDRs, ACM cert, required tags, permissions boundary, ECR/Logs reachability (NAT or VPC endpoints), and the company's process for bringing in a public repo. See README "Deploy to AWS". |
+| L2  | Accessibility pass                                                     | Screen-reader labels for medals and status dots, contrast check per role color, keyboard-only play-through.                                                                                                     |
+| L3  | Rocket auction contention in huge games                                | With 50 teams, popular rockets stay near full price. Watch after the playtest.                                                                                                                                  |
+| L4  | Keep past game results                                                 | Optional storage layer (file locally, DynamoDB at work). Only if someone actually wants history.                                                                                                                |
+| L5  | Sound                                                                  | Off by default; launch and timer cues.                                                                                                                                                                          |
+| L6  | Mobile app                                                             | Parked 2026-11-19. If revived: installable web app (PWA) first, Capacitor maybe, native no.                                                                                                                     |
 
 ## Done
 

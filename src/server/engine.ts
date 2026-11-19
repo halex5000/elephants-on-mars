@@ -14,18 +14,52 @@ import { auctionPrice, fuelInPool, fuelRate, FUEL } from '../shared/market.js';
 import { ROLES, type Role, type Phase, type Settings, type Outcome, type Standing, type FeedItem } from '../shared/protocol.js';
 
 export class GameError extends Error {}
-const fail = (msg: string): never => { throw new GameError(msg); };
+const fail = (msg: string): never => {
+  throw new GameError(msg);
+};
 
 export type Rng = () => number;
 
-export interface Player { id: string; name: string; token: string; joinedAt: number }
-export interface Member { playerId: string; roles: Role[] }
-export interface Team { id: string; name: string; members: Member[] }
+export interface Player {
+  id: string;
+  name: string;
+  token: string;
+  joinedAt: number;
+}
+export interface Member {
+  playerId: string;
+  roles: Role[];
+}
+export interface Team {
+  id: string;
+  name: string;
+  members: Member[];
+}
 /** One team's purchases in one mission. Re-buying replaces the item; nothing is refunded. fuel = units sent to this mission. */
-export interface Picks { animal?: string; rocket?: string; fuel: number; fuelGrabs: number; spent: { vet: number; pilot: number; engineer: number }; launchedAt?: number }
-export interface Transfer { team: string; from: Role; to: Role; amount: number; round: number; at: number }
-interface Listings { animals: Record<string, number>; rockets: Record<string, number> }
-export interface Market extends Listings { fuelResetAt: number; secondCopy?: Listings }
+export interface Picks {
+  animal?: string;
+  rocket?: string;
+  fuel: number;
+  fuelGrabs: number;
+  spent: { vet: number; pilot: number; engineer: number };
+  launchedAt?: number;
+}
+export interface Transfer {
+  team: string;
+  from: Role;
+  to: Role;
+  amount: number;
+  round: number;
+  at: number;
+}
+interface Listings {
+  animals: Record<string, number>;
+  rockets: Record<string, number>;
+}
+export interface Market extends Listings {
+  fuelResetAt: number;
+  secondCopy?: Listings;
+}
 
 // The displayed clock is always the older (cheaper) offer. After a sale the freshly
 // reset offer is the newest, so the other clock becomes the next advertised offer.
@@ -36,10 +70,16 @@ function resetListing(market: Market, kind: keyof Listings, id: string, now: num
 }
 
 export interface Game {
-  code: string; hostToken: string; createdAt: number; touchedAt: number;
-  phase: Phase; round: number; endsAt: number | null;
+  code: string;
+  hostToken: string;
+  createdAt: number;
+  touchedAt: number;
+  phase: Phase;
+  round: number;
+  endsAt: number | null;
   settings: Settings;
-  players: Player[]; teams: Team[];
+  players: Player[];
+  teams: Team[];
   picks: Record<string, Picks>; // key `${teamId}|${round}`
   transfers: Transfer[];
   market: Market;
@@ -66,7 +106,10 @@ export function cleanSettings(s: Partial<Settings> = {}, base: Settings = DEFAUL
 
 function shuffle<T>(arr: readonly T[], rng: Rng): T[] {
   const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j]!, a[i]!]; }
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j]!, a[i]!];
+  }
   return a;
 }
 const key = (team: string, round: number) => `${team}|${round}`;
@@ -78,11 +121,30 @@ const freshMarket = (now: number): Market => ({
 
 /* ---------- creation & lobby ---------- */
 export function createGame(code: string, hostToken: string, now: number, settings?: Partial<Settings>): Game {
-  return { code, hostToken, createdAt: now, touchedAt: now, phase: 'lobby', round: 0, endsAt: null, settings: cleanSettings(settings), players: [], teams: [], picks: {}, transfers: [], market: freshMarket(now), feed: [], fuelStock: {} };
+  return {
+    code,
+    hostToken,
+    createdAt: now,
+    touchedAt: now,
+    phase: 'lobby',
+    round: 0,
+    endsAt: null,
+    settings: cleanSettings(settings),
+    players: [],
+    teams: [],
+    picks: {},
+    transfers: [],
+    market: freshMarket(now),
+    feed: [],
+    fuelStock: {},
+  };
 }
 
 export function addPlayer(g: Game, id: string, token: string, rawName: string, now: number): Player {
-  const name = String(rawName ?? '').replace(/\s+/g, ' ').trim().slice(0, LIMITS.nameLength);
+  const name = String(rawName ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, LIMITS.nameLength);
   if (!name) fail('Enter a name to join.');
   if (g.players.length >= LIMITS.maxPlayers) fail('This game is full.');
   if (g.phase === 'final') fail('This game has finished.');
@@ -117,12 +179,16 @@ export function reshuffleRoles(team: Team, rng: Rng) {
   if (team.members.length < 2) return;
   const before = new Map(team.members.map(m => [m.playerId, m.roles.join()]));
   const repeats = () => team.members.filter(m => before.get(m.playerId) === m.roles.join()).length;
-  let best = team.members, fewest = Infinity;
+  let best = team.members,
+    fewest = Infinity;
   for (let attempt = 0; attempt < 200 && fewest > 0; attempt++) {
     team.members = shuffle(team.members, rng);
     assignRoles(team);
     const n = repeats();
-    if (n < fewest) { fewest = n; best = team.members.map(m => ({ ...m, roles: [...m.roles] })); }
+    if (n < fewest) {
+      fewest = n;
+      best = team.members.map(m => ({ ...m, roles: [...m.roles] }));
+    }
   }
   team.members = best;
 }
@@ -131,7 +197,10 @@ export function makeTeams(g: Game, rng: Rng, settings?: Partial<Settings>) {
   if (g.phase !== 'lobby' && g.phase !== 'teams') fail('Teams can only be made before the first mission.');
   if (!g.players.length) fail('Nobody has joined yet.');
   g.settings = cleanSettings(settings, g.settings);
-  const ids = shuffle(g.players.map(p => p.id), rng);
+  const ids = shuffle(
+    g.players.map(p => p.id),
+    rng,
+  );
   const nTeams = Math.max(1, Math.round(ids.length / g.settings.teamSize));
   const names = shuffle(TEAM_NAMES, rng);
   g.teams = Array.from({ length: nTeams }, (_, i) => ({
@@ -141,7 +210,12 @@ export function makeTeams(g: Game, rng: Rng, settings?: Partial<Settings>) {
   }));
   ids.forEach((id, i) => g.teams[i % nTeams]!.members.push({ playerId: id, roles: [] }));
   g.teams.forEach(assignRoles);
-  g.picks = {}; g.transfers = []; g.feed = []; g.fuelStock = {}; g.round = 0; g.endsAt = null;
+  g.picks = {};
+  g.transfers = [];
+  g.feed = [];
+  g.fuelStock = {};
+  g.round = 0;
+  g.endsAt = null;
   g.phase = 'teams';
 }
 
@@ -186,12 +260,23 @@ export function finish(g: Game) {
   g.phase = 'final';
 }
 export function newGame(g: Game, now: number) {
-  g.phase = 'lobby'; g.round = 0; g.endsAt = null; g.teams = []; g.picks = {}; g.transfers = []; g.feed = []; g.fuelStock = {}; g.market = freshMarket(now);
+  g.phase = 'lobby';
+  g.round = 0;
+  g.endsAt = null;
+  g.teams = [];
+  g.picks = {};
+  g.transfers = [];
+  g.feed = [];
+  g.fuelStock = {};
+  g.market = freshMarket(now);
 }
 
 /* ---------- queries ---------- */
 export function teamOf(g: Game, playerId: string): { team: Team; roles: Role[] } | undefined {
-  for (const team of g.teams) { const m = team.members.find(x => x.playerId === playerId); if (m) return { team, roles: m.roles }; }
+  for (const team of g.teams) {
+    const m = team.members.find(x => x.playerId === playerId);
+    if (m) return { team, roles: m.roles };
+  }
   return undefined;
 }
 const EMPTY: Picks = Object.freeze({ fuel: 0, fuelGrabs: 0, spent: Object.freeze({ vet: 0, pilot: 0, engineer: 0 }) }) as Picks;
@@ -201,14 +286,20 @@ export const launched = (g: Game, team: string, round: number) => picksFor(g, te
 /** The Captain gets `income` at the start of every mission reached so far; everything else moves by transfer or purchase. */
 export function balance(g: Game, team: string, role: Role): number {
   let b = role === 'captain' ? g.settings.income * Math.max(1, g.round) : 0;
-  for (const t of g.transfers) if (t.team === team) { if (t.to === role) b += t.amount; if (t.from === role) b -= t.amount; }
+  for (const t of g.transfers)
+    if (t.team === team) {
+      if (t.to === role) b += t.amount;
+      if (t.from === role) b -= t.amount;
+    }
   if (role !== 'captain') for (const [k, p] of Object.entries(g.picks)) if (k.startsWith(`${team}|`)) b -= p.spent[role];
   return b;
 }
 
 export const fuelRateFor = (g: Game) => fuelRate(g.teams.length);
-export const animalPriceNow = (g: Game, id: string, now: number) => auctionPrice((animalById(id) ?? fail('Unknown animal.')).base, g.market.animals[id] ?? now, now);
-export const rocketPriceNow = (g: Game, id: string, now: number) => auctionPrice((rocketById(id) ?? fail('Unknown rocket.')).base, g.market.rockets[id] ?? now, now);
+export const animalPriceNow = (g: Game, id: string, now: number) =>
+  auctionPrice((animalById(id) ?? fail('Unknown animal.')).base, g.market.animals[id] ?? now, now);
+export const rocketPriceNow = (g: Game, id: string, now: number) =>
+  auctionPrice((rocketById(id) ?? fail('Unknown rocket.')).base, g.market.rockets[id] ?? now, now);
 export const fuelPoolNow = (g: Game, now: number) => fuelInPool(g.market.fuelResetAt, fuelRateFor(g), now);
 
 export const missionOpen = (g: Game, now: number) => g.phase === 'play' && g.endsAt != null && now < g.endsAt;
@@ -233,7 +324,9 @@ function log(g: Game, now: number, team: Team, kind: FeedItem['kind'], text: str
   g.feed.push({ at: now, round: g.round, teamName: team.name, kind, text });
   if (g.feed.length > LIMITS.feedKept) g.feed.splice(0, g.feed.length - LIMITS.feedKept);
 }
-const afford = (g: Game, team: Team, role: Role, cost: number) => { if (cost > balance(g, team.id, role)) fail('Not enough money in your wallet. Ask the Captain.'); };
+const afford = (g: Game, team: Team, role: Role, cost: number) => {
+  if (cost > balance(g, team.id, role)) fail('Not enough money in your wallet. Ask the Captain.');
+};
 
 export function transfer(g: Game, playerId: string, from: Role, to: Role, amount: number, now: number) {
   if (!ROLES.includes(from) || !ROLES.includes(to)) fail('Unknown role.');
@@ -247,26 +340,32 @@ export function transfer(g: Game, playerId: string, from: Role, to: Role, amount
 }
 
 export function buyAnimal(g: Game, playerId: string, animalId: string, maxPrice: number, now: number) {
-  const team = actor(g, playerId, 'vet'); guardMission(g, team, now);
+  const team = actor(g, playerId, 'vet');
+  guardMission(g, team, now);
   const a = animalById(animalId) ?? fail('Unknown animal.');
   const price = animalPriceNow(g, a.id, now);
-  if (Number.isFinite(Number(maxPrice)) && price > Number(maxPrice)) fail(`Price jumped to $${price}: another team just bought ${a.name.toLowerCase()}.`);
+  if (Number.isFinite(Number(maxPrice)) && price > Number(maxPrice))
+    fail(`Price jumped to $${price}: another team just bought ${a.name.toLowerCase()}.`);
   afford(g, team, 'vet', price);
   const s = slot(g, team.id);
-  s.animal = a.id; s.spent.vet += price;
+  s.animal = a.id;
+  s.spent.vet += price;
   resetListing(g.market, 'animals', a.id, now);
   log(g, now, team, 'animal', `bought ${a.emoji} ${a.name} for $${price}`);
   return price;
 }
 
 export function buyRocket(g: Game, playerId: string, rocketId: string, maxPrice: number, now: number) {
-  const team = actor(g, playerId, 'pilot'); guardMission(g, team, now);
+  const team = actor(g, playerId, 'pilot');
+  guardMission(g, team, now);
   const r = rocketById(rocketId) ?? fail('Unknown rocket.');
   const price = rocketPriceNow(g, r.id, now);
-  if (Number.isFinite(Number(maxPrice)) && price > Number(maxPrice)) fail(`Price jumped to $${price}: another team just bought a ${r.name}.`);
+  if (Number.isFinite(Number(maxPrice)) && price > Number(maxPrice))
+    fail(`Price jumped to $${price}: another team just bought a ${r.name}.`);
   afford(g, team, 'pilot', price);
   const s = slot(g, team.id);
-  s.rocket = r.id; s.spent.pilot += price;
+  s.rocket = r.id;
+  s.spent.pilot += price;
   resetListing(g.market, 'rockets', r.id, now);
   log(g, now, team, 'rocket', `bought a ${r.name} for $${price}`);
   return price;
@@ -276,14 +375,16 @@ export const fuelStockOf = (g: Game, team: string) => g.fuelStock[team] ?? 0;
 
 /** Takes everything in the shared pool into the team's stock for a flat price, and empties it for every engineer. */
 export function buyFuel(g: Game, playerId: string, minUnits: number, now: number) {
-  const team = actor(g, playerId, 'engineer'); guardMission(g, team, now);
+  const team = actor(g, playerId, 'engineer');
+  guardMission(g, team, now);
   const units = fuelPoolNow(g, now);
   if (units < 1) fail('The fuel pool is empty. Give it a few seconds to fill.');
   const min = Math.max(1, Math.floor(Number(minUnits) || 1));
   if (units < Math.ceil(min / 2)) fail(`Another engineer just took the fuel. Only ${units} units left in the pool.`);
   afford(g, team, 'engineer', FUEL.grabCost);
   const s = slot(g, team.id);
-  s.fuelGrabs += 1; s.spent.engineer += FUEL.grabCost;
+  s.fuelGrabs += 1;
+  s.spent.engineer += FUEL.grabCost;
   g.fuelStock[team.id] = fuelStockOf(g, team.id) + units;
   g.market.fuelResetAt = now;
   log(g, now, team, 'fuel', `bought ${units} fuel for $${FUEL.grabCost}`);
@@ -292,7 +393,8 @@ export function buyFuel(g: Game, playerId: string, minUnits: number, now: number
 
 /** Loads fuel from the team's stock into this mission's rocket, FUEL_SEND_STEP units at a time. */
 export function sendFuel(g: Game, playerId: string, now: number) {
-  const team = actor(g, playerId, 'engineer'); guardMission(g, team, now);
+  const team = actor(g, playerId, 'engineer');
+  guardMission(g, team, now);
   const n = Math.min(FUEL_SEND_STEP, fuelStockOf(g, team.id));
   if (n < 1) fail('No fuel in stock. Buy from the market first.');
   g.fuelStock[team.id] = fuelStockOf(g, team.id) - n;
@@ -301,7 +403,8 @@ export function sendFuel(g: Game, playerId: string, now: number) {
 }
 
 export function launch(g: Game, playerId: string, now: number) {
-  const team = actor(g, playerId, 'captain'); guardMission(g, team, now);
+  const team = actor(g, playerId, 'captain');
+  guardMission(g, team, now);
   const s = slot(g, team.id);
   if (!s.animal || !s.rocket || !s.fuel) fail('You need an animal, a rocket and fuel sent to the mission before you can launch.');
   s.launchedAt = now;
@@ -313,7 +416,9 @@ export const allLaunched = (g: Game) => g.phase === 'play' && g.teams.every(t =>
 /** Shared-screen totals for the current mission. */
 export function missionStats(g: Game) {
   const r = g.round;
-  let distributed = 0, spent = 0, nLaunched = 0;
+  let distributed = 0,
+    spent = 0,
+    nLaunched = 0;
   for (const t of g.transfers) if (t.round === r && t.from === 'captain') distributed += t.amount;
   for (const t of g.teams) {
     const p = picksFor(g, t.id, r);
@@ -333,17 +438,33 @@ export function outcomes(g: Game, upTo = completedRounds(g)) {
     const row: Outcome[] = [];
     for (const t of g.teams) {
       const p = picksFor(g, t.id, r);
-      const a = p.animal ? animalById(p.animal) : undefined, rk = p.rocket ? rocketById(p.rocket) : undefined;
+      const a = p.animal ? animalById(p.animal) : undefined,
+        rk = p.rocket ? rocketById(p.rocket) : undefined;
       const o: Outcome = {
-        team: t.id, teamName: t.name, round: r, status: 'scrubbed', message: 'Never launched', points: 0,
+        team: t.id,
+        teamName: t.name,
+        round: r,
+        status: 'scrubbed',
+        message: 'Never launched',
+        points: 0,
         animal: a && { id: a.id, name: a.name, emoji: a.emoji, size: a.size },
         rocket: rk && { name: rk.name, size: rk.size, fuel: rk.fuel },
-        fuel: p.fuel, spent: p.spent.vet + p.spent.pilot + p.spent.engineer,
+        fuel: p.fuel,
+        spent: p.spent.vet + p.spent.pilot + p.spent.engineer,
       };
       if (p.launchedAt != null && a && rk) {
-        if (!fits(a.size, rk.size)) { o.status = 'failed'; o.message = `The ${a.name.toLowerCase()} (${a.size}) didn't fit in the ${rk.name} (${rk.size})`; }
-        else if (p.fuel < rk.fuel) { o.status = 'failed'; o.message = `Ran out of fuel (${p.fuel} of ${rk.fuel} needed)`; }
-        else { o.status = 'landed'; o.points = a.points; o.message = `${a.name} landed safely`; species.add(a.id); }
+        if (!fits(a.size, rk.size)) {
+          o.status = 'failed';
+          o.message = `The ${a.name.toLowerCase()} (${a.size}) didn't fit in the ${rk.name} (${rk.size})`;
+        } else if (p.fuel < rk.fuel) {
+          o.status = 'failed';
+          o.message = `Ran out of fuel (${p.fuel} of ${rk.fuel} needed)`;
+        } else {
+          o.status = 'landed';
+          o.points = a.points;
+          o.message = `${a.name} landed safely`;
+          species.add(a.id);
+        }
       }
       totals[t.id]! += o.points;
       row.push(o);

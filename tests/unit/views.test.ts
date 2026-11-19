@@ -66,14 +66,18 @@ describe('hidden information', () => {
   test('a player only gets consoles for roles they hold; doubled-up players get both', () => {
     const g = midMission();
     assert.deepEqual(Object.keys(playerView(g, holder(g, 0, 'pilot'), T0 + 1).console!), ['pilot']);
-    const g2 = setup(2); E.startRound(g2, T0, seeded());
+    const g2 = setup(2);
+    E.startRound(g2, T0, seeded());
     assert.equal(Object.keys(playerView(g2, g2.teams[0]!.members[0]!.playerId, T0).console!).length, 2);
   });
 
   test('the public feed names what was bought but never sizes, capacities or fuel needs', () => {
     const g = midMission();
     const v = playerView(g, holder(g, 1, 'engineer'), T0 + SETTLED + 2);
-    assert.ok(v.feed.some(f => /Elephant/.test(f.text)), 'feed is public, like the big screen');
+    assert.ok(
+      v.feed.some(f => /Elephant/.test(f.text)),
+      'feed is public, like the big screen',
+    );
     for (const s of Object.keys(secrets) as (keyof typeof secrets)[]) for (const re of secrets[s]()) assert.doesNotMatch(json(v.feed), re);
   });
 
@@ -81,7 +85,8 @@ describe('hidden information', () => {
     const g = midMission();
     const v = hostView(g, T0 + 1, pres);
     assert.ok(v.fuel);
-    for (const s of Object.keys(secrets) as (keyof typeof secrets)[]) for (const re of secrets[s]()) assert.doesNotMatch(json(v), re, `host leaked ${s}`);
+    for (const s of Object.keys(secrets) as (keyof typeof secrets)[])
+      for (const re of secrets[s]()) assert.doesNotMatch(json(v), re, `host leaked ${s}`);
   });
 
   test('tokens never appear in any view', () => {
@@ -91,8 +96,13 @@ describe('hidden information', () => {
   });
 
   test('consoles and the feed disappear outside a mission', () => {
-    const g = midMission(); E.endRound(g);
-    for (const p of g.players) { const v = playerView(g, p.id, T0); assert.equal(v.console, undefined); assert.equal(v.feed.length, 0); }
+    const g = midMission();
+    E.endRound(g);
+    for (const p of g.players) {
+      const v = playerView(g, p.id, T0);
+      assert.equal(v.console, undefined);
+      assert.equal(v.feed.length, 0);
+    }
   });
 
   test('results reveal everything, for finished missions only', () => {
@@ -117,7 +127,8 @@ describe('hidden information', () => {
     const g = started(4, { rounds: 1 });
     fund(g, 0, { vet: 30, pilot: 30, engineer: 30 });
     mission(g, 0, { animal: 'cat', rocket: 'compact', fuel: 20 });
-    E.endRound(g); E.finish(g);
+    E.endRound(g);
+    E.finish(g);
     assert.deepEqual(hostView(g, T0, pres).final!.byRound[0]!.landed, [{ name: 'Cat', emoji: '🐈' }]);
   });
 
@@ -135,6 +146,9 @@ describe('hidden information', () => {
     const v = playerView(g, holder(g, 0, 'vet'), T0);
     assert.equal(v.terraform.points, 40);
     assert.ok(v.terraform.pct > 0);
-    assert.deepEqual(v.terraform.species.map(s => s.name), ['Giraffe']);
+    assert.deepEqual(
+      v.terraform.species.map(s => s.name),
+      ['Giraffe'],
+    );
   });
 });
