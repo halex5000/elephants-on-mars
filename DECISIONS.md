@@ -4,7 +4,7 @@ Why things are the way they are. Add an entry when you make a choice someone mig
 
 ### The Captain can take unspent money back (2026-11-19)
 
-A wrong Give $1 was permanent, which made one misclick costly (found by Alex while testing). The Captain now has −$1 next to each crew member: it moves unspent money back, checked on the server, and can't touch money already spent. It's our addition (the original's footage doesn't show one), so it's marked in the README. Crew members could already send money back through the engine; that has no button yet.
+A wrong Give $1 was permanent, which made one misclick costly (found by Alex while testing). The Captain now has −$1 next to each crew member: it moves unspent money back, checked on the server, and can't touch money already spent. It's our addition (the original's footage doesn't show one), so it's marked in the README. Crew members can also give a dollar back to their Captain (#25).
 
 ### Seat recovery uses the returning tab's login (2026-11-19)
 
