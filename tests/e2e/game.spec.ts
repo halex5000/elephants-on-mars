@@ -188,6 +188,50 @@ test('the Captain can undo a wrong Give $1 with −$1', async ({ browser }) => {
   await expect(wallet(R.vet)).toHaveText('$2');
 });
 
+test('QA: Launch only looks ready when every light is on, and asks before a short-fuel launch', async ({ browser }) => {
+  const { byRole: R } = await setupMission(browser);
+  await give(R.captain, 'vet', 3);
+  await give(R.captain, 'pilot', 5);
+  await give(R.captain, 'engineer', 2);
+  await expect(R.vet.locator('.item[data-animal=cat] button')).toBeEnabled({ timeout: 15_000 });
+  await R.vet.locator('.item[data-animal=cat] button').click();
+  await expect(R.pilot.locator('.item[data-rocket=compact] button')).toBeEnabled({ timeout: 15_000 });
+  await R.pilot.locator('.item[data-rocket=compact] button').click(); // needs 20 fuel
+  await expect.poll(() => poolUnits(R.engineer), { timeout: 20_000 }).toBeGreaterThanOrEqual(20);
+  await R.engineer.getByRole('button', { name: 'Buy $1' }).click();
+  await R.engineer.getByRole('button', { name: 'Send 10' }).click(); // only 10 of 20 on board
+  const launch = R.captain.locator('button.launch');
+  await expect(launch).toBeEnabled();
+  await expect(launch).toHaveClass(/unsure/);
+  await expect(R.captain.getByText('The fuel light is still off')).toBeVisible();
+  await launch.click();
+  await expect(launch).toHaveText('Fuel light is off. Launch anyway?');
+  await R.engineer.getByRole('button', { name: 'Send 10' }).click(); // now 20 of 20
+  await expect(launch).not.toHaveClass(/unsure/, { timeout: 10_000 });
+  await expect(R.captain.getByText('The fuel light is still off')).toHaveCount(0);
+});
+
+test('QA: bought items show what you paid; a broke Vet is told to ask the Captain; phones see every animal', async ({ browser }) => {
+  const { byRole: R } = await setupMission(browser);
+  const vet = R.vet;
+  await expect(vet.getByText('Ask your Captain to send you money')).toBeVisible();
+  await give(R.captain, 'vet', 4);
+  await expect(vet.getByText('Ask your Captain to send you money')).toHaveCount(0);
+  const cat = vet.locator('.item[data-animal=cat]');
+  await expect(cat.locator('button')).toBeEnabled({ timeout: 15_000 });
+  const price = (await cat.locator('.price').innerText()).trim();
+  await cat.locator('button').click();
+  await expect(cat.locator('.price')).toHaveText(`Paid ${price}`);
+  // the listing reset to full price for everyone else, but we still see what we paid
+  await vet.waitForTimeout(500);
+  await expect(cat.locator('.price')).toHaveText(`Paid ${price}`);
+  // on a phone the whole list is part of the page: no inner scroll box hiding the XL animals
+  await vet.setViewportSize({ width: 375, height: 812 });
+  const box = vet.locator('.items');
+  expect(await box.evaluate(el => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
+  await expect(vet.locator('.item[data-animal=elephant]')).toBeAttached();
+});
+
 test('roles reshuffle for mission 2', async ({ browser }) => {
   const { host, players } = await setupMission(browser);
   const before = await Promise.all(players.map(roleOf));

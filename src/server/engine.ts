@@ -44,6 +44,9 @@ export interface Picks {
   fuelGrabs: number;
   spent: { vet: number; pilot: number; engineer: number };
   launchedAt?: number;
+  /** What the current animal / rocket actually cost (spent{} is cumulative across replacements). */
+  animalPaid?: number;
+  rocketPaid?: number;
   launchMsLeft?: number;
   lastPurchase?: string;
 }
@@ -405,6 +408,7 @@ export function buyAnimal(g: Game, playerId: string, animalId: string, maxPrice:
   afford(g, team, 'vet', price);
   const s = slot(g, team.id);
   s.animal = a.id;
+  s.animalPaid = price;
   s.spent.vet += price;
   resetListing(g.market, 'animals', a.id, now);
   log(g, now, team, 'animal', `bought ${a.emoji} ${a.name} for $${price}`);
@@ -421,6 +425,7 @@ export function buyRocket(g: Game, playerId: string, rocketId: string, maxPrice:
   afford(g, team, 'pilot', price);
   const s = slot(g, team.id);
   s.rocket = r.id;
+  s.rocketPaid = price;
   s.spent.pilot += price;
   resetListing(g.market, 'rockets', r.id, now);
   log(g, now, team, 'rocket', `bought a ${r.name} for $${price}`);

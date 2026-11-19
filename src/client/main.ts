@@ -593,6 +593,9 @@ function capBody(v: PlayerView, lock: boolean) {
   const c = v.console!.captain!,
     t = v.team!,
     ready = c.picks.animal && c.picks.rocket && c.picks.fuel,
+    // The fuel light only turns on once enough is loaded for this rocket; the Captain can still
+    // launch early (their call), but the button shouldn't look ready when the lights say otherwise.
+    allLit = t.status.animal && t.status.rocket && t.status.fuel,
     conf = Date.now() - ui.confirm < 4000;
   const capWallet = t.roster.find(r => r.role === 'captain')!.balance;
   return `<div class="stack">${(['vet', 'engineer', 'pilot'] as Role[])
@@ -602,17 +605,23 @@ function capBody(v: PlayerView, lock: boolean) {
     })
     .join('')}</div>
 <p class="sm mut" style="margin:12px 4px 0">Gave too much? <b>−$1</b> takes unspent money back. You can't see sizes or fuel needs. On board so far: ${c.picks.animal ? esc(c.picks.animal) : 'no animal'}, ${c.picks.rocket ? `the ${esc(c.picks.rocket)}` : 'no rocket'}, ${c.picks.fuel ? `${c.picks.fuel} fuel` : 'no fuel'}. Ask your crew if it's enough.</p>
-<div class="launchbar"><button class="launch ${conf ? 'confirm' : ''}" data-act="launch" ${!ready || lock ? 'disabled' : ''}>${t.status.launched ? 'Launched' : conf ? 'Tap again to launch' : 'Launch'}</button></div>
+<div class="launchbar"><button class="launch ${conf ? 'confirm' : ''} ${allLit ? '' : 'unsure'}" data-act="launch" ${!ready || lock ? 'disabled' : ''}>${t.status.launched ? 'Launched' : conf ? (allLit ? 'Tap again to launch' : 'Fuel light is off. Launch anyway?') : 'Launch'}</button></div>
+${ready && !allLit && !t.status.launched ? '<p class="hint">The fuel light is still off: your Engineer may not have loaded enough for this rocket. Check before you launch.</p>' : ''}
 <p class="sm mut m0" style="margin-top:8px;text-align:center">Unspent money carries over. You get $${v.settings.income} more each mission.</p>`;
 }
 const auctionAttrs = (base: number, reset: number) => `data-auction data-base="${base}" data-reset="${reset}"`;
 const liveNow = (base: number, reset: number) => auctionPrice(base, reset, serverNow());
+/** Shown when nothing is affordable yet, so a greyed-out list explains itself. */
+const brokeHint = (wallet: number, cheapest: number, bought: boolean) =>
+  !bought && wallet < cheapest
+    ? `<p class="hint" role="status">You have $${wallet}. Ask your Captain to send you money: they have the Give $1 buttons.</p>`
+    : '';
 function vetBody(v: PlayerView, lock: boolean, wallet: number) {
   const c = v.console!.vet!;
-  return `<div class="items" tabindex="0" role="region" aria-label="Animals for sale">${c.animals
+  return `${brokeHint(wallet, Math.min(...c.animals.map(a => liveNow(a.base, a.resetAt))), !!c.bought)}<div class="items" tabindex="0" role="region" aria-label="Animals for sale">${c.animals
     .map(a => {
       const on = c.bought === a.id;
-      return `<div class="item ${on ? 'on' : ''}" data-animal="${a.id}"><div><b>${esc(a.name)}</b><span class="sr-only">, size ${a.size}, ${a.points} points, price</span><div class="buy"><span class="price" ${auctionAttrs(a.base, a.resetAt)}>$${liveNow(a.base, a.resetAt)}</span><button data-act="buyAnimal" data-id="${a.id}" ${auctionAttrs(a.base, a.resetAt)} data-wallet="${wallet}" data-locked="${lock ? 1 : 0}">${on ? 'Taken' : 'Take'}<span class="sr-only"> ${esc(a.name)}</span></button></div></div>
+      return `<div class="item ${on ? 'on' : ''}" data-animal="${a.id}"><div><b>${esc(a.name)}</b><span class="sr-only">, size ${a.size}, ${a.points} points, price</span><div class="buy">${on && c.paid != null ? `<span class="price paid">Paid $${c.paid}</span>` : `<span class="price" ${auctionAttrs(a.base, a.resetAt)}>$${liveNow(a.base, a.resetAt)}</span>`}<button data-act="buyAnimal" data-id="${a.id}" ${auctionAttrs(a.base, a.resetAt)} data-wallet="${wallet}" data-locked="${lock ? 1 : 0}">${on ? 'Taken' : 'Take'}<span class="sr-only"> ${esc(a.name)}</span></button></div></div>
 <div class="medal" aria-hidden="true">${a.emoji}<span class="badge size tl" title="Size">${a.size}</span><span class="badge br" title="Points">★${a.points}</span></div></div>`;
     })
     .join('')}</div>
@@ -620,10 +629,10 @@ function vetBody(v: PlayerView, lock: boolean, wallet: number) {
 }
 function pilotBody(v: PlayerView, lock: boolean, wallet: number) {
   const c = v.console!.pilot!;
-  return `<div class="items" tabindex="0" role="region" aria-label="Rockets for sale">${c.rockets
+  return `${brokeHint(wallet, Math.min(...c.rockets.map(k => liveNow(k.base, k.resetAt))), !!c.bought)}<div class="items" tabindex="0" role="region" aria-label="Rockets for sale">${c.rockets
     .map(k => {
       const on = c.bought === k.id;
-      return `<div class="item ${on ? 'on' : ''}" data-rocket="${k.id}"><div><b>${esc(k.name)}</b><span class="sr-only">, size ${k.size}, needs ${k.fuel} fuel, price</span><div class="buy"><span class="price" ${auctionAttrs(k.base, k.resetAt)}>$${liveNow(k.base, k.resetAt)}</span><button data-act="buyRocket" data-id="${k.id}" ${auctionAttrs(k.base, k.resetAt)} data-wallet="${wallet}" data-locked="${lock ? 1 : 0}">${on ? 'Bought' : 'Buy'}<span class="sr-only"> ${esc(k.name)}</span></button></div></div>
+      return `<div class="item ${on ? 'on' : ''}" data-rocket="${k.id}"><div><b>${esc(k.name)}</b><span class="sr-only">, size ${k.size}, needs ${k.fuel} fuel, price</span><div class="buy">${on && c.paid != null ? `<span class="price paid">Paid $${c.paid}</span>` : `<span class="price" ${auctionAttrs(k.base, k.resetAt)}>$${liveNow(k.base, k.resetAt)}</span>`}<button data-act="buyRocket" data-id="${k.id}" ${auctionAttrs(k.base, k.resetAt)} data-wallet="${wallet}" data-locked="${lock ? 1 : 0}">${on ? 'Bought' : 'Buy'}<span class="sr-only"> ${esc(k.name)}</span></button></div></div>
 <div class="medal" aria-hidden="true">${rocket(k.size)}<span class="badge size tl" title="Size">${k.size}</span><span class="badge br" title="Fuel needed">${k.fuel}</span></div></div>`;
     })
     .join('')}</div>
