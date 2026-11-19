@@ -18,6 +18,7 @@ const app = await startServer({
   host: process.env.HOST ?? '0.0.0.0',
   publicDir,
   stateFile: process.env.STATE_FILE,
+  extraListingMinTeams: process.env.EXTRA_LISTING_MIN_TEAMS ? Number(process.env.EXTRA_LISTING_MIN_TEAMS) : undefined,
   maxGames: Number(process.env.MAX_GAMES ?? 200),
   hostPasscode: process.env.HOST_PASSCODE,
 });

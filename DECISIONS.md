@@ -2,6 +2,10 @@
 
 Why things are the way they are. Add an entry when you make a choice someone might otherwise undo. Newest first.
 
+### Extra auction copies are an opt-in playtest (2026-11-19)
+
+The server can assign a second independent price clock to every animal and rocket at mission start, based on the number of teams. The experiment uses a threshold of 26 teams. An unset threshold keeps the original rules. The existing role console always advertises the oldest clock, which gives the lowest price. A purchase advances only the sold copy, and the next buyer sees the other offer. The same maximum-price check protects concurrent buyers. Snapshot recovery keeps both clocks for the rest of the active mission. The next mission uses the current server setting.
+
 ### Primary host is outside work (Fly.io); AWS internal deploy is optional (2026-11-19)
 At work, the internal ALB means personal phones can't reach the game without VPN, which kills "scan and play". So the main deploy is a public host for friends (Fly.io, one always-on machine, about $3.69/mo; `render.yaml` kept as a free/cheap alternative). The CDK stack stays for a deploy inside the corporate network. Netlify and Vercel don't fit: they're serverless, with no long-lived WebSockets or in-memory state.
 

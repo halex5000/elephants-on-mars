@@ -464,3 +464,49 @@ describe('economy sanity (tuning guardrails)', () => {
     assert.ok(perTeam >= Math.max(...ROCKETS.map(r => r.fuel)), `each team averages ${perTeam} units`);
   });
 });
+
+describe('additional auction copies at a server-selected team count', () => {
+  for (const [threshold, twoCopies] of [[undefined, false], [3, false], [2, true]] as const) {
+    test('two teams, threshold ' + threshold, () => {
+      const g = setup(8);
+      E.startRound(g, T0, seeded(), threshold);
+      const at = T0 + SETTLED;
+      for (let i = 0; i < 2; i++) fund(g, i, { vet: 10, pilot: 10 });
+      const animalPrice = E.animalPriceNow(g, 'cat', at);
+      const rocketPrice = E.rocketPriceNow(g, 'compact', at);
+      for (const team of [0, 1]) {
+        if (team === 1 && !twoCopies) {
+          throwsGame(() => E.buyAnimal(g, holder(g, team, 'vet'), 'cat', animalPrice, at), /Price jumped/);
+          throwsGame(() => E.buyRocket(g, holder(g, team, 'pilot'), 'compact', rocketPrice, at), /Price jumped/);
+          break;
+        }
+        E.buyAnimal(g, holder(g, team, 'vet'), 'cat', animalPrice, at);
+        E.buyRocket(g, holder(g, team, 'pilot'), 'compact', rocketPrice, at);
+      }
+      assert.ok(E.animalPriceNow(g, 'cat', at) > animalPrice);
+      assert.ok(E.rocketPriceNow(g, 'compact', at) > rocketPrice);
+    });
+  }
+});
+
+test('staggered sales advertise the oldest copy across a snapshot and reset next mission', () => {
+  const g = setup(8);
+  E.startRound(g, T0, seeded(), 2);
+  fund(g, 0, { vet: 10, pilot: 10 });
+  const first = T0 + SETTLED, second = first + 30_000;
+  const pilot = holder(g, 0, 'pilot');
+  const floor = E.rocketPriceNow(g, 'compact', first);
+  E.buyRocket(g, pilot, 'compact', floor, first);
+  const recovered: E.Game = JSON.parse(JSON.stringify(g));
+  assert.equal(E.rocketPriceNow(recovered, 'compact', second), floor);
+  E.buyRocket(recovered, pilot, 'compact', floor, second);
+  assert.equal(recovered.market.rockets.compact, first);
+  assert.equal(recovered.market.secondCopy!.rockets.compact, second);
+  assert.equal(recovered.market.animals.cat, T0);
+  assert.equal(recovered.market.fuelResetAt, T0);
+  throwsGame(() => E.buyRocket(recovered, pilot, 'compact', floor, second), /Price jumped/);
+  E.endRound(recovered);
+  E.startRound(recovered, second, seeded());
+  assert.equal(recovered.market.secondCopy, undefined);
+  assert.equal(recovered.market.rockets.compact, second);
+});

@@ -4,13 +4,13 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 
 ## Handoff note
 
-*Last updated 2026-11-19 by Claude. Replace this block when you hand off; don't prepend to it.*
+*Last updated 2026-11-19 by Dex.*
 
-- **Merged today:** #4 N10 state snapshots (Dex), #3 N12 QR join (Claude), #5 N9 Copy results (Claude), #2 N11 50-team proposal (Dex), #1 Playwright bump (Dependabot).
-- **State:** `main` green in CI (types, unit, integration, load, e2e, CDK, container image).
-- **In flight:** Dex → N13 realistic load test. Claude → Playwright 1.65 bump (replaces Dependabot #1).
-- **Next for Alex:** D1 deploy to Fly, then N1 playtest.
-- **Snapshots are opt-in:** `STATE_FILE` unset = memory only. To use on Fly, add a volume at `/data`, set `STATE_FILE=/data/rooms.json`, and check `ls -ld /data` once (should be owned by `node`).
+- **N13** is on main (#6). The realistic default-budget runs found no one-minute wait from first fuel attempt in the three 50-team rooms.
+- **Auction follow-up** compares adaptive crews and extra listings in four matched conditions. Across 300 team-missions per condition: baseline 260 landed, adaptive crews 300, extra copies 300, both 300. Extra copies with fixed targets scored highest. The optional server setting is off by default. Results and reproduction steps live in [the market rehearsal](tests/load/README.md).
+- **Infrastructure audit** is waiting on an AWS CDK release containing [the upstream minimatch fix](https://github.com/aws/aws-cdk/pull/39595). CDK 2.277.0 bundles minimatch 10.2.6, including after an npm override. The suggested downgrade to CDK 2.239.0 introduced four high findings. Root audit is clean and all 11 infrastructure tests passed on the original dependency. Recheck both audits after upgrading.
+- **Also on main (Claude):** N7 big screen `/screen/CODE`, N8 launch moment, N9 Copy results, N12 QR join, one-click manual Fly deploy (Actions → Deploy to Fly), and a fix for roles sometimes not reshuffling (#11).
+- **Next for Alex** is deploying (Actions → Deploy to Fly) and a human playtest before enabling any market rule change.
 
 ## Now
 
@@ -27,8 +27,7 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 | N3 | Big-game fuel contention | In the 200-player load test, 50 engineers sharing one pool stretched the first mission past 4 minutes (later missions fine thanks to carried-over stock). Options: raise `FUEL.ratePerTeam`, raise the cap, or start each team with a little stock. |
 | N5 | Captain's "Restart" button | The original has one; what it does isn't shown. Ask someone who's played (Alex has played the original). |
 | N6 | Build and run the Docker image locally | `docker compose up --build` with OrbStack. Never built by a worker yet; Fly's remote builder or CI will be first. |
-| N13 | Realistic load test (Dex) | Next step from `docs/scale-50-teams.md`: a bot that plays default rules ($10/mission across three buyers, 4-minute clock) and per-team metrics in `tests/load/` (time to first fuel buy, rocket retries, % landed at 4:00, action→view latency). Run at 2/25/50 teams and add the numbers to the doc. Decides whether N11 sectors are needed. |
-| N11 | 50-team play: market sectors + big screen | Proposal merged (`docs/scale-50-teams.md`). Waiting on N13's numbers before building. Pairs with N3. |
+| N11 | 50-team play: market sectors + big screen | Proposal merged (`docs/scale-50-teams.md`). Default-budget results favor keeping the shared fuel pool. Trial the optional auction treatment (`EXTRA_LISTING_MIN_TEAMS`) with people before enabling it. |
 
 ## Later
 
@@ -44,6 +43,8 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 ## Done
 
 - Launch moment (N8): a rocket lifts off over the shared screen per launch (max 3 at once, "+N more"), fades in place with reduced motion, never replayed on reload
+- N13: default-budget market rehearsals at 2, 25, and 50 teams (#6).
+- Opt-in second auction copy (`EXTRA_LISTING_MIN_TEAMS`, off by default) + adaptive-crew trials (#12, Dex)
 - Big screen (N7): `/screen/CODE`, read-only projector view opened from the host page; screen sockets can't act (tested)
 - State snapshots (N10, Dex): opt-in `STATE_FILE`, restores rooms, seats and timers after a crash or restart
 - 50-team proposal (N11, Dex): `docs/scale-50-teams.md`

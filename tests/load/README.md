@@ -36,3 +36,28 @@ At 50 teams, zero of the 245 team-missions with a first fuel attempt crossed the
 The 38 missed launches at 50 teams break down as 13 without a rocket, another 17 with a rocket but no animal, and eight with both purchases and insufficient fuel loaded. This measures the state at timeout. It does not establish that any particular rejected purchase caused a missed launch.
 
 **Recommendation:** keep the global fuel market for the playtest. In this bot strategy the one-minute trigger for fuel sectors was never reached across three full-size rooms. The more promising comparison is the current fixed targets and budgets against crews that change animals or move an extra dollar to the Pilot. Then compare rocket availability if teams still struggle to buy. Use human play to check whether retries and late purchases feel tense or frustrating.
+
+## Testing auction supply and adaptive crews
+
+Run `MARKET_REPORT=auctions.json npm run test:load -- --auction-trials` for twelve local 50-team rooms. Each of three seating seeds runs four conditions in rotating order: the original strategy with one listing, adaptive crews only, two copies only, and both changes together. Each room plays two default-budget missions. Across conditions, animal targets, engine rules, clock speed, and seat seed are matched. WebSocket timing varies.
+
+Adaptive Vets stick with their original target for one minute, then can buy the highest-point affordable animal of that size or smaller. The Pilot learns the new size when the Vet confirms the purchase. A Captain sends the tenth dollar to the Pilot when the animal has already been bought and the crew still needs a rocket. Both actions fit the existing web consoles. The optional listing treatment uses `EXTRA_LISTING_MIN_TEAMS=26` in effect (passed as a local server option), preserving single listings through 25 teams. It supplies exactly two independent prices per animal and rocket, serving the lower one on the same button. The fuel pool stays shared.
+
+The JSON includes each crew's points, switch and transfer flags, rocket attempts and failures, first fuel wait, purchases, loaded fuel and landing. Scores help distinguish landing more animals from choosing only low-value payloads.
+
+### 50-team results, November 19
+
+Each row pools 300 team-missions across three 50-team rooms and two rounds per room. The baseline is a fresh run alongside the treatments. [Per-trial, per-round measurements](auction-trials.csv) include purchase failures, missing items and fuel waits.
+
+| Strategy and supply | Landed | Total points | Rocket rejections / attempts | Animal switches | Extra dollars to Pilot |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Fixed, one copy | 260/300 | 7,205 | 242/530 | 0 | 0 |
+| Adaptive, one copy | 300/300 | 6,990 | 128/428 | 112 | 2 |
+| Fixed, two copies | 300/300 | 9,150 | 112/412 | 0 | 0 |
+| Adaptive, two copies | 300/300 | 7,260 | 80/380 | 93 | 2 |
+
+With the original rules and strategy, 26 of the 40 missed launches lacked at least one purchase, 13 had both purchases but insufficient fuel loaded, and one had both purchases and enough fuel but missed launch. No Engineer who submitted a fuel purchase waited more than 41 game seconds for the first confirmation in any condition.
+
+Adaptive crews landed every mission on one copy, although choosing cheaper payloads reduced total points even with 40 extra landings. They changed animals 112 times and redirected the final dollar just twice. This combined treatment cannot isolate the effect of the dollar. With two copies, fixed crews landed their original payloads every time and scored the most. All three trials used scripted crews on a local machine. Human pacing and enjoyment still need a playtest.
+
+For the first human playtest, keep one copy and tell crews that switching to an affordable animal that fits is a legitimate strategy. Ask whether a switch felt like a satisfying team decision or abandoning the mission to beat a queue. Try two copies in a later large-room session if crews want a better chance to deliver their first choice. The tested threshold of 26 is an operator-selected trial setting; these runs did not estimate an optimal cutoff.
