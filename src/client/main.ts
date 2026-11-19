@@ -593,8 +593,13 @@ function capBody(v: PlayerView, lock: boolean) {
     ready = c.picks.animal && c.picks.rocket && c.picks.fuel,
     conf = Date.now() - ui.confirm < 4000;
   const capWallet = t.roster.find(r => r.role === 'captain')!.balance;
-  return `<div class="stack">${(['vet', 'engineer', 'pilot'] as Role[]).map(r => `<div class="give" style="--c:var(--${r})"><b>${RI[r].t}</b><span class="wallet" data-wallet-of="${r}">$${t.roster.find(x => x.role === r)!.balance}</span><button data-act="give" data-to="${r}" ${capWallet < 1 || v.phase !== 'play' ? 'disabled' : ''}>Give $1<span class="sr-only"> to the ${RI[r].t}</span></button></div>`).join('')}</div>
-<p class="sm mut" style="margin:12px 4px 0">You can't see sizes or fuel needs. On board so far: ${c.picks.animal ? esc(c.picks.animal) : 'no animal'}, ${c.picks.rocket ? `the ${esc(c.picks.rocket)}` : 'no rocket'}, ${c.picks.fuel ? `${c.picks.fuel} fuel` : 'no fuel'}. Ask your crew if it's enough.</p>
+  return `<div class="stack">${(['vet', 'engineer', 'pilot'] as Role[])
+    .map(r => {
+      const crew = t.roster.find(x => x.role === r)!.balance;
+      return `<div class="give" style="--c:var(--${r})"><b>${RI[r].t}</b><button class="back" data-act="takeBack" data-from="${r}" title="Take $1 back" ${crew < 1 || v.phase !== 'play' ? 'disabled' : ''}>−$1<span class="sr-only"> Take $1 back from the ${RI[r].t}</span></button><span class="wallet" data-wallet-of="${r}">$${crew}</span><button data-act="give" data-to="${r}" ${capWallet < 1 || v.phase !== 'play' ? 'disabled' : ''}>Give $1<span class="sr-only"> to the ${RI[r].t}</span></button></div>`;
+    })
+    .join('')}</div>
+<p class="sm mut" style="margin:12px 4px 0">Gave too much? <b>−$1</b> takes unspent money back. You can't see sizes or fuel needs. On board so far: ${c.picks.animal ? esc(c.picks.animal) : 'no animal'}, ${c.picks.rocket ? `the ${esc(c.picks.rocket)}` : 'no rocket'}, ${c.picks.fuel ? `${c.picks.fuel} fuel` : 'no fuel'}. Ask your crew if it's enough.</p>
 <div class="launchbar"><button class="launch ${conf ? 'confirm' : ''}" data-act="launch" ${!ready || lock ? 'disabled' : ''}>${t.status.launched ? 'Launched' : conf ? 'Tap again to launch' : 'Launch'}</button></div>
 <p class="sm mut m0" style="margin-top:8px;text-align:center">Unspent money carries over. You get $${v.settings.income} more each mission.</p>`;
 }
@@ -740,6 +745,9 @@ document.addEventListener('click', e => {
       break;
     case 'sendFuel':
       act({ a: 'sendFuel' });
+      break;
+    case 'takeBack':
+      act({ a: 'reclaim', from: d.from as Role, amount: 1 });
       break;
     case 'give':
       act({ a: 'transfer', from: 'captain', to: d.to as Role, amount: 1 });

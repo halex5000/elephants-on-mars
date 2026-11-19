@@ -172,7 +172,7 @@ Sourced from the original's "How it works" video and its gameplay footage where 
 
 - **Missions:** 6 by default, 4 minutes each (host can change both in the lobby).
 - **Roles** are random and reshuffle within each team every mission (mission 1 keeps the briefing roles). Wallets belong to roles, so a reshuffle hands the wallet over.
-- **Money:** the Captain gets $10 every mission and hands it out with **Give $1** buttons, like the original. Unspent money carries over _(guess)_.
+- **Money:** the Captain gets $10 every mission and hands it out with **Give $1** buttons, like the original. A **−$1** button next to each crew member takes unspent money back, to undo a wrong click *(our addition; spent money stays spent)*. Unspent money carries over _(guess)_.
 - **Animals** have a size (S, M, L, XL) and points. Only the Vet sees them.
 - **Rockets** have a size and the fuel they need. A rocket carries any animal its size or smaller. Each size comes in a pricier frugal model and a cheap thirsty one _(numbers are ours)_. Only the Pilot sees them.
 - **Animal and rocket markets: countdown auctions** _(guess at the video's "similar mechanics")_. Each listing's price drifts from 1.5× its base down to 0.5× over 90 seconds, never below $1. When any team buys it, it snaps back to full price for everyone. Buying again replaces your item; no refunds.

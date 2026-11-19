@@ -270,6 +270,9 @@ export async function startServer(
       case 'transfer':
         E.transfer(g, needPlayer(), action.from, action.to, action.amount, t);
         break;
+      case 'reclaim':
+        E.reclaim(g, needPlayer(), action.from, action.amount, t);
+        break;
       case 'buyAnimal':
         E.buyAnimal(g, needPlayer(), String(action.animal), action.maxPrice, t);
         break;

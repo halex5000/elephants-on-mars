@@ -187,6 +187,29 @@ describe('auth and abuse', () => {
     closeAll(h, p, bad, s);
   });
 
+  test('Take back $1: only the Captain, only unspent money, over the wire', async () => {
+    const { h, players } = await lobby(4);
+    h.act({ a: 'makeTeams', settings: { rounds: 1, ...RICH } });
+    await h.until(() => h.hv.phase === 'teams');
+    h.act({ a: 'startRound' });
+    await Promise.all(players.map(p => p.until(() => p.pv.phase === 'play')));
+    const who = (r: string) => players.find(p => p.pv.team!.roles.includes(r as never))!;
+    const cap = who('captain'),
+      vet = who('vet');
+    const bal = (c: typeof cap, r: string) => c.pv.team!.roster.find(x => x.role === r)!.balance;
+    cap.act({ a: 'transfer', from: 'captain', to: 'vet', amount: 3 });
+    await cap.until(() => bal(cap, 'vet') === 3);
+    cap.act({ a: 'reclaim', from: 'vet', amount: 1 });
+    await vet.until(() => bal(vet, 'vet') === 2, 2000, 'vet sees $2');
+    vet.act({ a: 'reclaim', from: 'pilot', amount: 1 });
+    await vet.until(() => vet.errors.length === 1, 2000, 'non-captain rejected');
+    assert.match(vet.errors[0]!, /Only the captain/);
+    cap.act({ a: 'reclaim', from: 'vet', amount: 5 });
+    await cap.until(() => cap.errors.length === 1, 2000, 'overdraw rejected');
+    assert.equal(bal(cap, 'vet'), 2);
+    closeAll(h, ...players);
+  });
+
   test('players cannot use host actions; unjoined sockets cannot act', async () => {
     const { h, players } = await lobby(1);
     const p = players[0]!;

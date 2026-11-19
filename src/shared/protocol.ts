@@ -25,6 +25,8 @@ export type Action =
   | { a: 'swapSeat'; offlineId: string; newcomerId: string }
   | { a: 'removePlayer'; playerId: string }
   | { a: 'transfer'; from: Role; to: Role; amount: number }
+  /** Captain only: take unspent money back from a crew role. */
+  | { a: 'reclaim'; from: Role; amount: number }
   /** maxPrice: the price the player saw; refused if someone reset the auction meanwhile */
   | { a: 'buyAnimal'; animal: string; maxPrice: number }
   | { a: 'buyRocket'; rocket: string; maxPrice: number }
