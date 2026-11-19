@@ -98,15 +98,22 @@ export function assignRoles(team: Team) {
   else ROLES.forEach((r, j) => team.members[j % k]!.roles.push(r));
 }
 
-/** Random roles for a new mission, avoiding giving anyone the same role twice in a row when possible. */
+/**
+ * Random roles for a new mission, giving nobody the same role twice in a row when possible.
+ * Random retries, keeping the best attempt: a team of 4 only gets a full reshuffle ~37% of the
+ * time per try, so 200 tries make a miss astronomically unlikely, and if one ever happens we
+ * keep the attempt with the fewest repeats rather than whatever came last.
+ */
 export function reshuffleRoles(team: Team, rng: Rng) {
+  if (team.members.length < 2) return;
   const before = new Map(team.members.map(m => [m.playerId, m.roles.join()]));
-  let best = team.members;
-  for (let attempt = 0; attempt < 8; attempt++) {
+  const repeats = () => team.members.filter(m => before.get(m.playerId) === m.roles.join()).length;
+  let best = team.members, fewest = Infinity;
+  for (let attempt = 0; attempt < 200 && fewest > 0; attempt++) {
     team.members = shuffle(team.members, rng);
     assignRoles(team);
-    best = team.members;
-    if (team.members.length < 2 || team.members.every(m => before.get(m.playerId) !== m.roles.join())) break;
+    const n = repeats();
+    if (n < fewest) { fewest = n; best = team.members.map(m => ({ ...m, roles: [...m.roles] })); }
   }
   team.members = best;
 }

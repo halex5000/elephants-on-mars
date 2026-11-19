@@ -92,6 +92,24 @@ describe('roles reshuffle every mission', () => {
     assert.equal(changed, 8 * 5, 'with 4-person teams, nobody keeps the same role twice in a row');
   });
 
+  test('regression: nobody keeps their role, across thousands of reshuffles at every team size', () => {
+    // A team of 4 only gets a full reshuffle about 37% of the time at random. The old code
+    // gave up after 8 tries and kept the last one, so ~2% of reshuffles left someone in place.
+    const rng = seeded(2026);
+    for (let k = 2; k <= 8; k++) {
+      const team = { id: 't1', name: 'T', members: Array.from({ length: k }, (_, i) => ({ playerId: `p${i}`, roles: [] as string[] })) } as unknown as Parameters<typeof E.reshuffleRoles>[0];
+      E.assignRoles(team);
+      let repeats = 0;
+      for (let n = 0; n < 2000; n++) {
+        const before = new Map(team.members.map(m => [m.playerId, m.roles.join()]));
+        E.reshuffleRoles(team, rng);
+        repeats += team.members.filter(m => before.get(m.playerId) === m.roles.join()).length;
+        assert.deepEqual(new Set(team.members.flatMap(m => m.roles)), new Set(ROLES), 'every role covered');
+      }
+      assert.equal(repeats, 0, `team of ${k}: ${repeats} players kept their role`);
+    }
+  });
+
   test('money belongs to the role, not the person: a reshuffle hands the wallet over', () => {
     const g = started(4, { rounds: 2 });
     fund(g, 0, { vet: 100 });
