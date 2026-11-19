@@ -8,6 +8,13 @@ import { E2E_PASSCODE } from './env.js';
 import { join as botJoin, type Client } from '../bot.js';
 import { fuelInPool } from '../../src/shared/market.js';
 
+// Tests open their own browser contexts (one per player) and nothing closes them. Without this,
+// every earlier test's players stay connected and keep getting updates, so the suite slows down
+// as it grows and late tests time out under load.
+test.afterEach(async ({ browser }) => {
+  await Promise.all(browser.contexts().map(c => c.close()));
+});
+
 type Role = 'captain' | 'vet' | 'pilot' | 'engineer';
 
 // Any uncaught error in any page fails the test that produced it.
