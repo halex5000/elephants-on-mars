@@ -24,6 +24,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Lint, format and secret scan (same checks as the git hooks)
+        run: npm run check
       - run: npm run typecheck
       - run: npm run build
       - run: npm run test:unit

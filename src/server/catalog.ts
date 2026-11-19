@@ -12,8 +12,21 @@ export const sizeRank = (s: Size) => SIZES.indexOf(s);
 /** A rocket can carry an animal if the rocket is at least as big. */
 export const fits = (animal: Size, rocket: Size) => sizeRank(rocket) >= sizeRank(animal);
 
-export interface Animal { id: string; name: string; emoji: string; size: Size; points: number; base: number }
-export interface Rocket { id: string; name: string; size: Size; fuel: number; base: number }
+export interface Animal {
+  id: string;
+  name: string;
+  emoji: string;
+  size: Size;
+  points: number;
+  base: number;
+}
+export interface Rocket {
+  id: string;
+  name: string;
+  size: Size;
+  fuel: number;
+  base: number;
+}
 
 /** base = middle of its auction range, in dollars */
 export const ANIMALS: readonly Animal[] = [
@@ -45,7 +58,20 @@ export const ROCKETS: readonly Rocket[] = [
 /** Fuel moves from the team's stock into the mission this many units at a time. */
 export const FUEL_SEND_STEP = 10;
 
-export const TEAM_NAMES: readonly string[] = ['Trunk Show', 'Red Dusters', 'Ground Control', 'Peanut Gallery', 'Olympus Mob', 'Pachyderm Program', 'Crater Crew', 'Mars Bars', 'Dust Bunnies', 'Launch Party', 'Orbit Squad', 'Tusk Force'];
+export const TEAM_NAMES: readonly string[] = [
+  'Trunk Show',
+  'Red Dusters',
+  'Ground Control',
+  'Peanut Gallery',
+  'Olympus Mob',
+  'Pachyderm Program',
+  'Crater Crew',
+  'Mars Bars',
+  'Dust Bunnies',
+  'Launch Party',
+  'Orbit Squad',
+  'Tusk Force',
+];
 
 /** Group terraforming goal: points per team per mission that would make Mars a paradise. */
 export const TERRAFORM_POINTS_PER_TEAM_ROUND = 35;

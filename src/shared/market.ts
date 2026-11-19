@@ -9,22 +9,23 @@
 //    purchase takes the whole pool for a flat price and empties it.
 
 export const AUCTION = {
-  highMult: 1.5,   // price right after a reset, × base
-  floorMult: 0.5,  // lowest it drifts to, × base
+  highMult: 1.5, // price right after a reset, × base
+  floorMult: 0.5, // lowest it drifts to, × base
   decayMs: 90_000, // time to drift from high to floor
 };
 
 export const FUEL = {
-  grabCost: 1,          // flat price of one purchase, however much is in the pool ("BUY $1")
-  ratePerTeam: 0.6,     // units per second the pool fills, per team in the game
-  minRate: 1,           // so small games still fill at a playable pace
-  cap: 400,             // pool never holds more than this
+  grabCost: 1, // flat price of one purchase, however much is in the pool ("BUY $1")
+  ratePerTeam: 0.6, // units per second the pool fills, per team in the game
+  minRate: 1, // so small games still fill at a playable pace
+  cap: 400, // pool never holds more than this
 };
 
 /** Whole dollars, never below $1. */
 export function auctionPrice(base: number, resetAt: number, now: number): number {
   const t = Math.min(1, Math.max(0, (now - resetAt) / AUCTION.decayMs));
-  const high = base * AUCTION.highMult, floor = base * AUCTION.floorMult;
+  const high = base * AUCTION.highMult,
+    floor = base * AUCTION.floorMult;
   return Math.max(1, Math.round(high - (high - floor) * t));
 }
 

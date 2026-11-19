@@ -7,13 +7,38 @@
 // Everyone (like the original's big screen) sees the public activity feed and results.
 import { ANIMALS, ROCKETS, FUEL_SEND_STEP, animalById, rocketById } from './catalog.js';
 import { FUEL } from '../shared/market.js';
-import { type Game, balance, completedRounds, fuelRateFor, fuelStockOf, launched, missionStats, outcomes, picksFor, teamOf, SPECIES_TOTAL } from './engine.js';
-import { ROLES, type Common, type HostView, type PlayerView, type TeamStatus, type FinalSummary, type FuelMarket } from '../shared/protocol.js';
+import {
+  type Game,
+  balance,
+  completedRounds,
+  fuelRateFor,
+  fuelStockOf,
+  launched,
+  missionStats,
+  outcomes,
+  picksFor,
+  teamOf,
+  SPECIES_TOTAL,
+} from './engine.js';
+import {
+  ROLES,
+  type Common,
+  type HostView,
+  type PlayerView,
+  type TeamStatus,
+  type FinalSummary,
+  type FuelMarket,
+} from '../shared/protocol.js';
 
-export interface Presence { isConnected(playerId: string): boolean }
+export interface Presence {
+  isConnected(playerId: string): boolean;
+}
 
 /** Everything that is the same for every viewer, computed once per broadcast. */
-export interface Shared { common: Common; outcomes: ReturnType<typeof outcomes> }
+export interface Shared {
+  common: Common;
+  outcomes: ReturnType<typeof outcomes>;
+}
 
 function status(g: Game, team: string): TeamStatus {
   const p = g.phase === 'play' ? picksFor(g, team, g.round) : undefined;
@@ -33,25 +58,53 @@ export function shared(g: Game, now: number, speed = 1): Shared {
     final = {
       winner: o.standings[0] && o.standings[0].points > 0 ? o.standings[0].name : undefined,
       topPoints: o.standings[0]?.points ?? 0,
-      failed: flat.filter(x => x.status === 'failed').length, scrubbed: flat.filter(x => x.status === 'scrubbed').length,
+      failed: flat.filter(x => x.status === 'failed').length,
+      scrubbed: flat.filter(x => x.status === 'scrubbed').length,
       byRound: o.standings.map(s => {
         const pts = o.rounds.map(row => row.find(x => x.team === s.team)!.points);
-        const landed = o.rounds.flatMap(row => row.filter(x => x.team === s.team && x.status === 'landed').map(x => ({ name: x.animal!.name, emoji: x.animal!.emoji })));
-        return { team: s.team, name: s.name, points: pts, total: s.points, wins: pts.flatMap((p, i) => (p > 0 && p === best[i] ? [i + 1] : [])), landed };
+        const landed = o.rounds.flatMap(row =>
+          row.filter(x => x.team === s.team && x.status === 'landed').map(x => ({ name: x.animal!.name, emoji: x.animal!.emoji })),
+        );
+        return {
+          team: s.team,
+          name: s.name,
+          points: pts,
+          total: s.points,
+          wins: pts.flatMap((p, i) => (p > 0 && p === best[i] ? [i + 1] : [])),
+          landed,
+        };
       }),
     };
   }
   const common: Common = {
-    code: g.code, phase: g.phase, round: g.round, totalRounds: g.settings.rounds,
-    endsAt: g.endsAt, serverNow: now, settings: g.settings, speed,
+    code: g.code,
+    phase: g.phase,
+    round: g.round,
+    totalRounds: g.settings.rounds,
+    endsAt: g.endsAt,
+    serverNow: now,
+    settings: g.settings,
+    speed,
     results: o.rounds.map((row, i) => ({ round: i + 1, outcomes: row })),
     standings: o.standings,
     terraform: {
-      points: o.groupPoints, target: o.target, pct: Math.min(100, Math.round((o.groupPoints / o.target) * 100)),
-      species: [...o.species].map(id => { const a = animalById(id)!; return { name: a.name, emoji: a.emoji }; }), speciesTotal: SPECIES_TOTAL,
+      points: o.groupPoints,
+      target: o.target,
+      pct: Math.min(100, Math.round((o.groupPoints / o.target) * 100)),
+      species: [...o.species].map(id => {
+        const a = animalById(id)!;
+        return { name: a.name, emoji: a.emoji };
+      }),
+      speciesTotal: SPECIES_TOTAL,
     },
     final,
-    feed: g.phase === 'play' ? g.feed.filter(f => f.round === g.round).slice(-25).reverse() : [],
+    feed:
+      g.phase === 'play'
+        ? g.feed
+            .filter(f => f.round === g.round)
+            .slice(-25)
+            .reverse()
+        : [],
     stats: missionStats(g),
   };
   return { common, outcomes: o };
@@ -60,10 +113,13 @@ export function shared(g: Game, now: number, speed = 1): Shared {
 export function hostView(g: Game, now: number, pres: Presence, sh: Shared = shared(g, now)): HostView {
   const name = (id: string) => g.players.find(p => p.id === id)?.name ?? 'Someone';
   return {
-    ...sh.common, kind: 'host',
+    ...sh.common,
+    kind: 'host',
     players: g.players.map(p => ({ id: p.id, name: p.name, connected: pres.isConnected(p.id), seated: !!teamOf(g, p.id) })),
     teams: g.teams.map(t => ({
-      id: t.id, name: t.name, status: status(g, t.id),
+      id: t.id,
+      name: t.name,
+      status: status(g, t.id),
       members: t.members.map(m => ({ name: name(m.playerId), roles: m.roles, connected: pres.isConnected(m.playerId) })),
     })),
     fuel: g.phase === 'play' ? fuelMarket(g) : undefined,
@@ -78,8 +134,14 @@ export function playerView(g: Game, playerId: string, now: number, sh: Shared = 
   const { team, roles } = mine;
   const name = (id: string) => g.players.find(p => p.id === id)?.name ?? 'Someone';
   base.team = {
-    id: team.id, name: team.name, roles,
-    roster: ROLES.map(role => ({ role, names: team.members.filter(m => m.roles.includes(role)).map(m => name(m.playerId)), balance: balance(g, team.id, role) })),
+    id: team.id,
+    name: team.name,
+    roles,
+    roster: ROLES.map(role => ({
+      role,
+      names: team.members.filter(m => m.roles.includes(role)).map(m => name(m.playerId)),
+      balance: balance(g, team.id, role),
+    })),
     status: status(g, team.id),
   };
   if (g.phase !== 'play') return base;
@@ -89,11 +151,30 @@ export function playerView(g: Game, playerId: string, now: number, sh: Shared = 
   if (roles.includes('captain')) {
     const a = p.animal ? animalById(p.animal) : undefined;
     // names only: the Captain learns sizes and fuel needs by asking
-    c.captain = { picks: { animal: a && `${a.emoji} ${a.name}`, rocket: p.rocket ? rocketById(p.rocket)!.name : undefined, fuel: p.fuel || undefined } };
+    c.captain = {
+      picks: { animal: a && `${a.emoji} ${a.name}`, rocket: p.rocket ? rocketById(p.rocket)!.name : undefined, fuel: p.fuel || undefined },
+    };
   }
-  if (roles.includes('vet')) c.vet = { animals: ANIMALS.map(a => ({ id: a.id, name: a.name, emoji: a.emoji, size: a.size, points: a.points, base: a.base, resetAt: g.market.animals[a.id]! })), bought: p.animal };
-  if (roles.includes('pilot')) c.pilot = { rockets: ROCKETS.map(k => ({ id: k.id, name: k.name, size: k.size, fuel: k.fuel, base: k.base, resetAt: g.market.rockets[k.id]! })), bought: p.rocket };
-  if (roles.includes('engineer')) c.engineer = { market: fuelMarket(g), stock: fuelStockOf(g, team.id), sent: p.fuel, sendStep: FUEL_SEND_STEP };
+  if (roles.includes('vet'))
+    c.vet = {
+      animals: ANIMALS.map(a => ({
+        id: a.id,
+        name: a.name,
+        emoji: a.emoji,
+        size: a.size,
+        points: a.points,
+        base: a.base,
+        resetAt: g.market.animals[a.id]!,
+      })),
+      bought: p.animal,
+    };
+  if (roles.includes('pilot'))
+    c.pilot = {
+      rockets: ROCKETS.map(k => ({ id: k.id, name: k.name, size: k.size, fuel: k.fuel, base: k.base, resetAt: g.market.rockets[k.id]! })),
+      bought: p.rocket,
+    };
+  if (roles.includes('engineer'))
+    c.engineer = { market: fuelMarket(g), stock: fuelStockOf(g, team.id), sent: p.fuel, sendStep: FUEL_SEND_STEP };
   base.console = c;
   return base;
 }

@@ -39,13 +39,17 @@ test('desiredCount 0 parks it; anything above 1 is refused', () => {
 test('ALB only accepts the allowed CIDRs', () => {
   const t = synth({ allowedCidrs: '10.1.0.0/16,10.2.0.0/16' });
   const sgs = t.findResources('AWS::EC2::SecurityGroup', { Properties: { GroupDescription: Match.stringLikeRegexp('ALB') } });
-  const ingress = Object.values(sgs).flatMap(r => (r as { Properties: { SecurityGroupIngress?: { CidrIp: string }[] } }).Properties.SecurityGroupIngress ?? []);
+  const ingress = Object.values(sgs).flatMap(
+    r => (r as { Properties: { SecurityGroupIngress?: { CidrIp: string }[] } }).Properties.SecurityGroupIngress ?? [],
+  );
   assert.deepEqual(ingress.map(i => i.CidrIp).sort(), ['10.1.0.0/16', '10.2.0.0/16']);
 });
 
 test('nothing is open to 0.0.0.0/0 inbound', () => {
   const t = synth();
-  const sgs = Object.values(t.findResources('AWS::EC2::SecurityGroup')) as { Properties: { SecurityGroupIngress?: { CidrIp?: string }[] } }[];
+  const sgs = Object.values(t.findResources('AWS::EC2::SecurityGroup')) as {
+    Properties: { SecurityGroupIngress?: { CidrIp?: string }[] };
+  }[];
   for (const sg of sgs) for (const r of sg.Properties.SecurityGroupIngress ?? []) assert.notEqual(r.CidrIp, '0.0.0.0/0');
 });
 

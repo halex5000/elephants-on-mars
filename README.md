@@ -1,8 +1,8 @@
 # Elephants on Mars
 
-A multiplayer team-building game for a video call, built as a playable homage to [MeetMax Games' *Elephants on Mars*](https://meetmaxgames.com/elephants-on-mars) so you can run it with your own friends and coworkers. Players split into teams of four, each person gets a random role, and every role sees a different piece of the puzzle. The only way to get an animal to Mars is to talk to each other.
+A multiplayer team-building game for a video call, built as a playable homage to [MeetMax Games' _Elephants on Mars_](https://meetmaxgames.com/elephants-on-mars) so you can run it with your own friends and coworkers. Players split into teams of four, each person gets a random role, and every role sees a different piece of the puzzle. The only way to get an animal to Mars is to talk to each other.
 
-*Fan-made and not affiliated with or endorsed by MeetMax Games. All code and art here are original.*
+_Fan-made and not affiliated with or endorsed by MeetMax Games. All code and art here are original._
 
 - **Captain** holds the money and the launch button.
 - **Vet** buys the animal and is the only one who sees animal sizes and points.
@@ -59,15 +59,15 @@ tests/                  unit, integration, load, e2e
 
 ## Tests
 
-| Command | What it covers |
-|---|---|
-| `npm run typecheck` | strict TypeScript, server + client |
-| `npm run test:unit` | rules, money, scoring, marketplace, fuel math for every combination, and the hidden-info contract per role |
-| `npm run test:integration` | real server + bot players over WebSockets (20× game clock): full games through the live markets, a wrong-rocket sabotage game, role reshuffles, doubled-up roles, auth, rate limits, oversized frames, reconnects, timer auto-end, host passcode and its guess throttle |
-| `npm run test:load` | one 200-player game (50 teams) plus 5 side games at once; fails if anything doesn't land or a round is slow. Market collisions (two teams going for the same thing) are reported, not failed. `PLAYERS=300 GAMES=10` or `LOAD_URL=http://host:3000` to hit a running server |
-| `npm run test:e2e` | Playwright with a 10× game clock: host + 4 players in separate browsers play a mission through the live markets (Give $1, Take, Buy, Buy $1 → Send 10, Launch), plus the first-time host passcode flow, a QR test that decodes the on-screen code and joins with it, role reshuffle, live ticking, reload, timer, solo, phone width, dead links, and a regression test for Give $1 during heavy updates. Any uncaught browser error fails the test |
-| `npm run infra:test` | CDK guardrails: internal-only ALB, no public IPs, never more than one task, CIDR-restricted, tags and permissions boundary applied |
-| `npm run test:all` | everything above except infra |
+| Command                    | What it covers                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run typecheck`        | strict TypeScript, server + client                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `npm run test:unit`        | rules, money, scoring, marketplace, fuel math for every combination, and the hidden-info contract per role                                                                                                                                                                                                                                                                                                                                         |
+| `npm run test:integration` | real server + bot players over WebSockets (20× game clock): full games through the live markets, a wrong-rocket sabotage game, role reshuffles, doubled-up roles, auth, rate limits, oversized frames, reconnects, timer auto-end, host passcode and its guess throttle                                                                                                                                                                            |
+| `npm run test:load`        | one 200-player game (50 teams) plus 5 side games at once; fails if anything doesn't land or a round is slow. Market collisions (two teams going for the same thing) are reported, not failed. `PLAYERS=300 GAMES=10` or `LOAD_URL=http://host:3000` to hit a running server                                                                                                                                                                        |
+| `npm run test:e2e`         | Playwright with a 10× game clock: host + 4 players in separate browsers play a mission through the live markets (Give $1, Take, Buy, Buy $1 → Send 10, Launch), plus the first-time host passcode flow, a QR test that decodes the on-screen code and joins with it, role reshuffle, live ticking, reload, timer, solo, phone width, dead links, and a regression test for Give $1 during heavy updates. Any uncaught browser error fails the test |
+| `npm run infra:test`       | CDK guardrails: internal-only ALB, no public IPs, never more than one task, CIDR-restricted, tags and permissions boundary applied                                                                                                                                                                                                                                                                                                                 |
+| `npm run test:all`         | everything above except infra                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 If Playwright can't download its browser (locked-down networks), point it at an installed Chrome: `CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run test:e2e`.
 
@@ -119,24 +119,25 @@ npx cdk deploy \
   -c permissionsBoundaryArn=arn:aws:iam::...:policy/YourBoundary
 ```
 
-| Context key | Default | Notes |
-|---|---|---|
-| `vpcId` | create a new isolated VPC | Use your existing internal VPC. Its private subnets need a route to ECR and CloudWatch Logs (NAT or VPC endpoints). |
-| `subnetIds` | VPC's private subnets | Comma-separated. |
-| `allowedCidrs` | the VPC's CIDR | Who can reach the ALB, e.g. corporate/VPN ranges. |
-| `certificateArn` | none (HTTP on 80) | With it: HTTPS on 443, 80 redirects. |
-| `imageUri` | build from the Dockerfile | Use an image from your internal registry instead. |
-| `desiredCount` | `1` | `0` parks it between game nights. Anything above 1 is refused. |
-| `permissionsBoundaryArn` | none | Applied to every role the stack creates. |
-| `tags` | `app=elephants-on-mars` | `key=value,key=value`. |
-| `logRetentionDays` | `14` | |
-| `stackName` | `ElephantsOnMars` | |
+| Context key              | Default                   | Notes                                                                                                               |
+| ------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `vpcId`                  | create a new isolated VPC | Use your existing internal VPC. Its private subnets need a route to ECR and CloudWatch Logs (NAT or VPC endpoints). |
+| `subnetIds`              | VPC's private subnets     | Comma-separated.                                                                                                    |
+| `allowedCidrs`           | the VPC's CIDR            | Who can reach the ALB, e.g. corporate/VPN ranges.                                                                   |
+| `certificateArn`         | none (HTTP on 80)         | With it: HTTPS on 443, 80 redirects.                                                                                |
+| `imageUri`               | build from the Dockerfile | Use an image from your internal registry instead.                                                                   |
+| `desiredCount`           | `1`                       | `0` parks it between game nights. Anything above 1 is refused.                                                      |
+| `permissionsBoundaryArn` | none                      | Applied to every role the stack creates.                                                                            |
+| `tags`                   | `app=elephants-on-mars`   | `key=value,key=value`.                                                                                              |
+| `logRetentionDays`       | `14`                      |                                                                                                                     |
+| `stackName`              | `ElephantsOnMars`         |                                                                                                                     |
 
 `cdk.context.json` is git-ignored on purpose: CDK writes looked-up VPC and account details there.
 
 **Park it between games:** `npx cdk deploy -c desiredCount=0 ...` (or `aws ecs update-service --desired-count 0`). The ALB still costs a little while it exists; `npx cdk destroy` removes everything.
 
 **Things to know:**
+
 - The default task has ephemeral storage. Deploy between game nights or configure durable storage for checkpoints.
 - The deployment stops the old task before starting the new one, so there's a minute or two of downtime. That's deliberate: two tasks would split players into separate games.
 - Logs are JSON lines in CloudWatch: `game_created`, `player_joined`, `round_auto_ended`, `socket_error`.
@@ -151,15 +152,15 @@ For Fly redeploys, attach a persistent Fly Volume in the machine's region, mount
 
 ## Server settings
 
-| Env var | Default | |
-|---|---|---|
-| `PORT` | `3000` | |
-| `HOST` | `0.0.0.0` | |
-| `EXTRA_LISTING_MIN_TEAMS` | unset (off) | Experiment: at or above this team count, give each animal and rocket two independent auction clocks. Buyers automatically see and buy the cheaper copy. Enter a positive whole number. |
-| `MAX_GAMES` | `200` | concurrent games per process |
-| `PUBLIC_DIR` | `dist/public` | |
-| `HOST_PASSCODE` | *(none)* | If set, creating a game needs this passcode (players never do). Set it on any public deploy. Wrong guesses are throttled to 20 a minute server-wide. |
-| `GAME_SPEED` | `1` | Fast-forwards the game clock (timers, fuel pool, auctions). For demos and tests only. |
+| Env var                   | Default       |                                                                                                                                                                                        |
+| ------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                    | `3000`        |                                                                                                                                                                                        |
+| `HOST`                    | `0.0.0.0`     |                                                                                                                                                                                        |
+| `EXTRA_LISTING_MIN_TEAMS` | unset (off)   | Experiment: at or above this team count, give each animal and rocket two independent auction clocks. Buyers automatically see and buy the cheaper copy. Enter a positive whole number. |
+| `MAX_GAMES`               | `200`         | concurrent games per process                                                                                                                                                           |
+| `PUBLIC_DIR`              | `dist/public` |                                                                                                                                                                                        |
+| `HOST_PASSCODE`           | _(none)_      | If set, creating a game needs this passcode (players never do). Set it on any public deploy. Wrong guesses are throttled to 20 a minute server-wide.                                   |
+| `GAME_SPEED`              | `1`           | Fast-forwards the game clock (timers, fuel pool, auctions). For demos and tests only.                                                                                                  |
 
 Built-in limits: 300 players per game, 4 KB per message, 20 messages per second per connection, idle games removed after 12 hours.
 
@@ -167,21 +168,21 @@ The page loads nothing from outside the server: no CDNs, fonts or analytics.
 
 ## Game rules reference
 
-Sourced from the original's "How it works" video and its gameplay footage where possible; marked *guess* where it doesn't show.
+Sourced from the original's "How it works" video and its gameplay footage where possible; marked _guess_ where it doesn't show.
 
 - **Missions:** 6 by default, 4 minutes each (host can change both in the lobby).
 - **Roles** are random and reshuffle within each team every mission (mission 1 keeps the briefing roles). Wallets belong to roles, so a reshuffle hands the wallet over.
-- **Money:** the Captain gets $10 every mission and hands it out with **Give $1** buttons, like the original. Unspent money carries over *(guess)*.
+- **Money:** the Captain gets $10 every mission and hands it out with **Give $1** buttons, like the original. Unspent money carries over _(guess)_.
 - **Animals** have a size (S, M, L, XL) and points. Only the Vet sees them.
-- **Rockets** have a size and the fuel they need. A rocket carries any animal its size or smaller. Each size comes in a pricier frugal model and a cheap thirsty one *(numbers are ours)*. Only the Pilot sees them.
-- **Animal and rocket markets: countdown auctions** *(guess at the video's "similar mechanics")*. Each listing's price drifts from 1.5× its base down to 0.5× over 90 seconds, never below $1. When any team buys it, it snaps back to full price for everyone. Buying again replaces your item; no refunds.
-- **Fuel** *(from the video)*: one global pool shared by every engineer, filling at 0.6 units/second per team (minimum 1/s, capped at 400). **Buy $1** takes the whole pool into your team's stock and empties it for everyone. **Send 10** loads fuel from stock onto this mission's rocket. Stock carries over between missions.
+- **Rockets** have a size and the fuel they need. A rocket carries any animal its size or smaller. Each size comes in a pricier frugal model and a cheap thirsty one _(numbers are ours)_. Only the Pilot sees them.
+- **Animal and rocket markets: countdown auctions** _(guess at the video's "similar mechanics")_. Each listing's price drifts from 1.5× its base down to 0.5× over 90 seconds, never below $1. When any team buys it, it snaps back to full price for everyone. Buying again replaces your item; no refunds.
+- **Fuel** _(from the video)_: one global pool shared by every engineer, filling at 0.6 units/second per team (minimum 1/s, capped at 400). **Buy $1** takes the whole pool into your team's stock and empties it for everyone. **Send 10** loads fuel from stock onto this mission's rocket. Stock carries over between missions.
 - **Fairness:** a purchase is refused if the price jumped or the pool was emptied since the player looked, so nobody pays a surprise price.
 - **Launch:** succeeds if the animal fits the rocket and the rocket has at least the fuel it needs. Anything bought but not launched by the end of a mission is lost.
 - **Scoring:** a landed animal scores its points. Every team's points together terraform Mars (shown after each mission, and on the shared screen's planet).
 - **Big screen:** the host page has **Open big screen** (`/screen/CODE`): the same live picture without any controls, for screen-sharing or a projector. It only opens in the host's browser (it uses the host's saved token), shows a big QR in the lobby and a small "Late? Join" QR during play.
 - **Shared screen:** the host view shows the timer, a live feed of every purchase and launch, the fuel pool, % launched, $ distributed and $ spent, and each team's status.
-- *Not implemented:* the original Captain screen has a "Restart" button; what it does isn't shown.
+- _Not implemented:_ the original Captain screen has a "Restart" button; what it does isn't shown.
 
 All balance numbers live in `src/server/catalog.ts` and `src/shared/market.ts`; `tests/unit/engine.test.ts` has economy guardrails that keep tuning sane.
 

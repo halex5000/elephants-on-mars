@@ -12,11 +12,16 @@ type Role = 'captain' | 'vet' | 'pilot' | 'engineer';
 
 // Any uncaught error in any page fails the test that produced it.
 const pageErrors: string[] = [];
-test.beforeEach(() => { pageErrors.length = 0; });
-test.afterEach(() => { expect(pageErrors, 'uncaught errors in the browser').toEqual([]); });
+test.beforeEach(() => {
+  pageErrors.length = 0;
+});
+test.afterEach(() => {
+  expect(pageErrors, 'uncaught errors in the browser').toEqual([]);
+});
 
 test('first-time host: asked for the passcode, wrong one refused, right one remembered', async ({ browser }) => {
-  const ctx = await browser.newContext(); const host = await ctx.newPage();
+  const ctx = await browser.newContext();
+  const host = await ctx.newPage();
   host.on('pageerror', e => pageErrors.push(`host: ${e.message}`));
   await host.goto('/');
   await expect(host.locator('#hpass')).toHaveCount(0);
@@ -79,14 +84,18 @@ const wallet = (p: Page) => p.locator('.c-stats .cash');
 async function setupMission(browser: Browser, opts: { mobileFor?: number; income?: number } = {}) {
   const { host, code } = await createGame(browser, { income: opts.income });
   const players: Page[] = [];
-  for (let i = 0; i < 4; i++) players.push(await joinGame(browser, code, `Player ${i}`, opts.mobileFor === i ? { width: 375, height: 812 } : undefined));
+  for (let i = 0; i < 4; i++)
+    players.push(await joinGame(browser, code, `Player ${i}`, opts.mobileFor === i ? { width: 375, height: 812 } : undefined));
   await expect(host.locator('.chips span')).toHaveCount(4);
   await host.getByRole('button', { name: /Make teams/ }).click();
   await expect(host.getByRole('heading', { name: 'Teams' })).toBeVisible();
   await host.getByRole('button', { name: 'Start mission 1' }).click();
   await expect(host.getByRole('heading', { name: /Mission 1 of/ })).toBeVisible();
   const byRole = {} as Record<Role, Page>;
-  for (const p of players) { await expect(p.getByRole('heading', { name: /Mission 1 of/ })).toBeVisible(); byRole[await roleOf(p)] = p; }
+  for (const p of players) {
+    await expect(p.getByRole('heading', { name: /Mission 1 of/ })).toBeVisible();
+    byRole[await roleOf(p)] = p;
+  }
   expect(Object.keys(byRole).sort()).toEqual(['captain', 'engineer', 'pilot', 'vet']);
   return { host, code, players, byRole };
 }
@@ -186,10 +195,18 @@ test('regression: every Give $1 lands on the right teammate even while the scree
   // The vet keeps buying cheap animals, so the captain's screen updates constantly while they tap.
   let stop = false;
   const churn = (async () => {
-    for (let i = 0; !stop && i < 40; i++) await R.vet.locator(`.item[data-animal=${i % 2 ? 'penguin' : 'cat'}] button`).click({ timeout: 2000 }).catch(() => {});
+    for (let i = 0; !stop && i < 40; i++)
+      await R.vet
+        .locator(`.item[data-animal=${i % 2 ? 'penguin' : 'cat'}] button`)
+        .click({ timeout: 2000 })
+        .catch(() => {});
   })();
-  for (let i = 0; i < 6; i++) { await R.captain.locator('button[data-act=give][data-to=pilot]').click(); await R.captain.locator('button[data-act=give][data-to=engineer]').click(); }
-  stop = true; await churn;
+  for (let i = 0; i < 6; i++) {
+    await R.captain.locator('button[data-act=give][data-to=pilot]').click();
+    await R.captain.locator('button[data-act=give][data-to=engineer]').click();
+  }
+  stop = true;
+  await churn;
   await expect(wallet(R.pilot)).toHaveText('$6');
   await expect(wallet(R.engineer)).toHaveText('$6');
 });
@@ -222,10 +239,13 @@ async function scanQr(page: Page): Promise<string | undefined> {
   const size = 400;
   const px = await page.locator('.qrbox svg.qr').evaluate(async (svg, n) => {
     const img = new Image();
-    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg));
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(svg))}`;
     await img.decode();
-    const c = document.createElement('canvas'); c.width = c.height = n;
-    const g = c.getContext('2d')!; g.imageSmoothingEnabled = false; g.drawImage(img, 0, 0, n, n);
+    const c = document.createElement('canvas');
+    c.width = c.height = n;
+    const g = c.getContext('2d')!;
+    g.imageSmoothingEnabled = false;
+    g.drawImage(img, 0, 0, n, n);
     return Array.from(g.getImageData(0, 0, n, n).data);
   }, size);
   return jsQR(Uint8ClampedArray.from(px), size, size)?.data;
@@ -299,19 +319,28 @@ async function launchSolo(b: Client) {
   b.act({ a: 'buyAnimal', animal: 'cat', maxPrice: 99 });
   b.act({ a: 'buyRocket', rocket: 'compact', maxPrice: 99 }); // needs 20 fuel
   // Views only arrive when something changes, so project the game clock forward from the last one.
-  const t0 = Date.now(), s0 = b.pv.serverNow, speed = b.pv.speed || 1;
-  const pool = () => { const m = b.pv.console?.engineer?.market; return m ? fuelInPool(m.resetAt, m.ratePerSec, s0 + (Date.now() - t0) * speed) : 0; };
+  const t0 = Date.now(),
+    s0 = b.pv.serverNow,
+    speed = b.pv.speed || 1;
+  const pool = () => {
+    const m = b.pv.console?.engineer?.market;
+    return m ? fuelInPool(m.resetAt, m.ratePerSec, s0 + (Date.now() - t0) * speed) : 0;
+  };
   await expect.poll(pool, { timeout: 15_000 }).toBeGreaterThanOrEqual(20);
   b.act({ a: 'buyFuel', minUnits: 1 });
   await b.until(() => (b.pv.console?.engineer?.stock ?? 0) >= 20, 10_000, 'fuel in stock');
-  b.act({ a: 'sendFuel' }); b.act({ a: 'sendFuel' });
+  b.act({ a: 'sendFuel' });
+  b.act({ a: 'sendFuel' });
   await b.until(() => b.pv.team?.status.fuel === true, 5000, 'fuel loaded');
   b.act({ a: 'launch' });
   await b.until(() => b.pv.team?.status.launched === true, 5000, 'launched');
 }
 
 for (const motion of ['no-preference', 'reduce'] as const) {
-  test(`a launch lifts off once on the big screen (${motion === 'reduce' ? 'reduced motion: no movement' : 'animated'})`, async ({ browser, baseURL }) => {
+  test(`a launch lifts off once on the big screen (${motion === 'reduce' ? 'reduced motion: no movement' : 'animated'})`, async ({
+    browser,
+    baseURL,
+  }) => {
     const { host, code } = await createGame(browser, { income: 20 });
     const [screen] = await Promise.all([host.context().waitForEvent('page'), host.getByRole('link', { name: 'Open big screen' }).click()]);
     screen.on('pageerror', e => pageErrors.push(`screen: ${e.message}`));
@@ -429,7 +458,11 @@ test('works on a phone-sized screen without sideways scrolling', async ({ browse
 
 test('no console errors on any screen', async ({ browser }) => {
   const errors: string[] = [];
-  const watch = (p: Page) => { p.on('console', m => { if (m.type() === 'error' && !/fonts\.g/.test(m.text())) errors.push(m.text()); }); };
+  const watch = (p: Page) => {
+    p.on('console', m => {
+      if (m.type() === 'error' && !/fonts\.g/.test(m.text())) errors.push(m.text());
+    });
+  };
   const { host, players } = await setupMission(browser);
   [host, ...players].forEach(watch);
   for (const p of players) await p.reload();

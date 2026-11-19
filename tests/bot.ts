@@ -16,49 +16,94 @@ export class Client {
   /** Keep every raw message (for leak tests). Off for load tests to save memory. */
   keepRaw = true;
 
-  constructor(public url: string, public onView?: (c: Client) => void) {
-    this.ws = new WebSocket(url.replace(/^http/, 'ws') + '/ws');
-    this.opened = new Promise((res, rej) => { this.ws.once('open', () => res()); this.ws.once('error', rej); });
+  constructor(
+    public url: string,
+    public onView?: (c: Client) => void,
+  ) {
+    this.ws = new WebSocket(`${url.replace(/^http/, 'ws')}/ws`);
+    this.opened = new Promise((res, rej) => {
+      this.ws.once('open', () => res());
+      this.ws.once('error', rej);
+    });
     this.ws.on('message', d => {
-      const s = String(d); if (this.keepRaw) this.raw.push(s);
+      const s = String(d);
+      if (this.keepRaw) this.raw.push(s);
       const m = JSON.parse(s) as ServerMsg;
       if (m.t === 'view') this.view = m.view;
       if (m.t === 'error') this.errors.push(m.message);
       if (m.t === 'created') this.creds = { code: m.code, hostToken: m.hostToken };
       if (m.t === 'joined') this.creds = { code: m.code, playerId: m.playerId, token: m.token };
       if (m.t === 'view' && this.onView) this.onView(this);
-      this.waiters = this.waiters.filter(w => (w.pred() ? (w.resolve(), false) : true));
+      this.waiters = this.waiters.filter(w => {
+        if (!w.pred()) return true;
+        w.resolve();
+        return false;
+      });
     });
-    this.ws.on('close', () => { this.closed = true; this.waiters.forEach(w => w.pred() && w.resolve()); });
+    this.ws.on('close', () => {
+      this.closed = true;
+      this.waiters.forEach(w => w.pred() && w.resolve());
+    });
   }
-  send(m: ClientMsg) { this.ws.send(JSON.stringify(m)); }
-  act(action: Action) { this.send({ t: 'act', action }); }
+  send(m: ClientMsg) {
+    this.ws.send(JSON.stringify(m));
+  }
+  act(action: Action) {
+    this.send({ t: 'act', action });
+  }
   until(pred: () => boolean, ms = 5000, label = 'condition'): Promise<void> {
     if (pred()) return Promise.resolve();
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error(`timed out waiting for ${label}; last errors: ${this.errors.slice(-3).join(' | ')}`)), ms);
-      this.waiters.push({ pred, resolve: () => { clearTimeout(timer); resolve(); } });
+      const timer = setTimeout(
+        () => reject(new Error(`timed out waiting for ${label}; last errors: ${this.errors.slice(-3).join(' | ')}`)),
+        ms,
+      );
+      this.waiters.push({
+        pred,
+        resolve: () => {
+          clearTimeout(timer);
+          resolve();
+        },
+      });
     });
   }
-  close() { this.ws.close(); }
-  get pv() { return this.view as PlayerView; }
-  get hv() { return this.view as HostView; }
+  close() {
+    this.ws.close();
+  }
+  get pv() {
+    return this.view as PlayerView;
+  }
+  get hv() {
+    return this.view as HostView;
+  }
 }
 
 export async function host(url: string) {
-  const c = new Client(url); await c.opened; c.send({ t: 'create' });
-  await c.until(() => c.view?.kind === 'host', 5000, 'host view'); return c;
+  const c = new Client(url);
+  await c.opened;
+  c.send({ t: 'create' });
+  await c.until(() => c.view?.kind === 'host', 5000, 'host view');
+  return c;
 }
 export async function join(url: string, code: string, name: string, onView?: (c: Client) => void, keepRaw = true) {
-  const c = new Client(url, onView); c.keepRaw = keepRaw; await c.opened; c.send({ t: 'join', code, name });
-  await c.until(() => c.view?.kind === 'player', 5000, `${name} joined`); return c;
+  const c = new Client(url, onView);
+  c.keepRaw = keepRaw;
+  await c.opened;
+  c.send({ t: 'join', code, name });
+  await c.until(() => c.view?.kind === 'player', 5000, `${name} joined`);
+  return c;
 }
 
 /* ---------- team radio + playing strategy ---------- */
 import { auctionPrice, fuelInPool } from '../src/shared/market.js';
 
 /** What a team has said out loud in its breakout room this mission. */
-export interface Radio { round: number; size?: string; fuelNeed?: number; onBoard?: number }
+export interface Radio {
+  round: number;
+  size?: string;
+  fuelNeed?: number;
+  onBoard?: number;
+}
 const RANK = ['S', 'M', 'L', 'XL'];
 export type Strategy = (round: number, teamIndex: number) => string; // which animal the vet buys
 
@@ -81,22 +126,47 @@ export function playBot(radios: Map<string, Radio>, pickAnimal: Strategy = () =>
   const attempt = (k: string, fn: () => void, gapMs = 400) => {
     const t = Date.now();
     if (t - (lastTry.get(k) ?? 0) < gapMs) return;
-    lastTry.set(k, t); fn();
+    lastTry.set(k, t);
+    fn();
   };
   let timer: NodeJS.Timeout | undefined;
   const step = (c: Client) => {
-    if (c.closed) { clients.delete(c); return; }
-    if (!clients.has(c)) { clients.add(c); timer ??= setInterval(() => { clients.forEach(step); if (!clients.size) { clearInterval(timer); timer = undefined; } }, 40); timer.unref(); }
-    const v = c.view; if (!v || v.kind !== 'player' || !v.team || v.phase !== 'play' || !v.console) return;
-    const t = v.team, r = v.round, now = clock();
-    let radio = radios.get(t.id); if (!radio || radio.round !== r) { radio = { round: r }; radios.set(t.id, radio); }
+    if (c.closed) {
+      clients.delete(c);
+      return;
+    }
+    if (!clients.has(c)) {
+      clients.add(c);
+      timer ??= setInterval(() => {
+        clients.forEach(step);
+        if (!clients.size) {
+          clearInterval(timer);
+          timer = undefined;
+        }
+      }, 40);
+      timer.unref();
+    }
+    const v = c.view;
+    if (v?.kind !== 'player' || !v.team || v.phase !== 'play' || !v.console) return;
+    const t = v.team,
+      r = v.round,
+      now = clock();
+    let radio = radios.get(t.id);
+    if (!radio || radio.round !== r) {
+      radio = { round: r };
+      radios.set(t.id, radio);
+    }
     const has = (role: Role) => t.roles.includes(role);
     const bal = (role: Role) => t.roster.find(x => x.role === role)!.balance;
     const ti = Number(t.id.slice(1)) - 1;
 
     if (has('captain')) {
       const cap = v.console.captain!;
-      const want: [Role, number][] = [['vet', 12], ['pilot', 12], ['engineer', 8]];
+      const want: [Role, number][] = [
+        ['vet', 12],
+        ['pilot', 12],
+        ['engineer', 8],
+      ];
       let capLeft = bal('captain'); // spend from one running total, not the same stale balance three times
       for (const [role, amt] of want) {
         const top = Math.min(amt - bal(role), capLeft);
@@ -104,7 +174,8 @@ export function playBot(radios: Map<string, Radio>, pickAnimal: Strategy = () =>
         if (top > 0) attempt(`fund${r}${role}`, () => c.act({ a: 'transfer', from: 'captain', to: role, amount: top }), 1500);
       }
       const enough = radio.fuelNeed != null && (radio.onBoard ?? 0) >= radio.fuelNeed;
-      if (cap.picks.animal && cap.picks.rocket && cap.picks.fuel && enough && !t.status.launched) attempt(`launch${r}`, () => c.act({ a: 'launch' }), 1000);
+      if (cap.picks.animal && cap.picks.rocket && cap.picks.fuel && enough && !t.status.launched)
+        attempt(`launch${r}`, () => c.act({ a: 'launch' }), 1000);
     }
     if (has('vet')) {
       const vet = v.console.vet!;
@@ -118,7 +189,9 @@ export function playBot(radios: Map<string, Radio>, pickAnimal: Strategy = () =>
     if (has('pilot') && radio.size != null) {
       const p = v.console.pilot!;
       const need = RANK.indexOf(radio.size);
-      const fit = (opts.tinyRocket ? [...p.rockets] : p.rockets.filter(k => RANK.indexOf(k.size) >= need)).sort((x, y) => RANK.indexOf(x.size) - RANK.indexOf(y.size) || x.fuel - y.fuel)[0]!;
+      const fit = (opts.tinyRocket ? [...p.rockets] : p.rockets.filter(k => RANK.indexOf(k.size) >= need)).sort(
+        (x, y) => RANK.indexOf(x.size) - RANK.indexOf(y.size) || x.fuel - y.fuel,
+      )[0]!;
       if (!p.bought) {
         const price = auctionPrice(fit.base, fit.resetAt, now);
         if (price <= bal('pilot')) attempt(`rocket${r}`, () => c.act({ a: 'buyRocket', rocket: fit.id, maxPrice: price + 2 }));
