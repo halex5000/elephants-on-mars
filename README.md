@@ -155,6 +155,7 @@ For Fly redeploys, attach a persistent Fly Volume in the machine's region, mount
 |---|---|---|
 | `PORT` | `3000` | |
 | `HOST` | `0.0.0.0` | |
+| `EXTRA_LISTING_MIN_TEAMS` | unset (off) | Experiment: at or above this team count, give each animal and rocket two independent auction clocks. Buyers automatically see and buy the cheaper copy. Enter a positive whole number. |
 | `MAX_GAMES` | `200` | concurrent games per process |
 | `PUBLIC_DIR` | `dist/public` | |
 | `HOST_PASSCODE` | *(none)* | If set, creating a game needs this passcode (players never do). Set it on any public deploy. Wrong guesses are throttled to 20 a minute server-wide. |

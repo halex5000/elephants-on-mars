@@ -24,7 +24,16 @@ export interface Team { id: string; name: string; members: Member[] }
 /** One team's purchases in one mission. Re-buying replaces the item; nothing is refunded. fuel = units sent to this mission. */
 export interface Picks { animal?: string; rocket?: string; fuel: number; fuelGrabs: number; spent: { vet: number; pilot: number; engineer: number }; launchedAt?: number }
 export interface Transfer { team: string; from: Role; to: Role; amount: number; round: number; at: number }
-export interface Market { animals: Record<string, number>; rockets: Record<string, number>; fuelResetAt: number } // resetAt timestamps
+interface Listings { animals: Record<string, number>; rockets: Record<string, number> }
+export interface Market extends Listings { fuelResetAt: number; secondCopy?: Listings }
+
+// The displayed clock is always the older (cheaper) offer. After a sale the freshly
+// reset offer is the newest, so the other clock becomes the next advertised offer.
+function resetListing(market: Market, kind: keyof Listings, id: string, now: number) {
+  const second = market.secondCopy?.[kind];
+  market[kind][id] = second?.[id] ?? now;
+  if (second) second[id] = now;
+}
 
 export interface Game {
   code: string; hostToken: string; createdAt: number; touchedAt: number;
@@ -150,7 +159,7 @@ export function seatLatecomers(g: Game) {
 }
 
 /* ---------- round flow (host) ---------- */
-export function startRound(g: Game, now: number, rng: Rng) {
+export function startRound(g: Game, now: number, rng: Rng, extraListingMinTeams?: number) {
   if (g.phase !== 'teams' && g.phase !== 'results') fail('A mission is already running.');
   if (g.round >= g.settings.rounds) fail('All missions are done. Show the final debrief.');
   if (g.round > 0) g.teams.forEach(t => reshuffleRoles(t, rng)); // mission 1 keeps the roles from the briefing
@@ -158,6 +167,9 @@ export function startRound(g: Game, now: number, rng: Rng) {
   g.phase = 'play';
   g.endsAt = now + Math.round(g.settings.minutes * 60_000);
   g.market = freshMarket(now);
+  if (extraListingMinTeams && g.teams.length >= extraListingMinTeams) {
+    g.market.secondCopy = { animals: { ...g.market.animals }, rockets: { ...g.market.rockets } };
+  }
 }
 export function endRound(g: Game) {
   if (g.phase !== 'play') fail('No mission is running.');
@@ -240,7 +252,7 @@ export function buyAnimal(g: Game, playerId: string, animalId: string, maxPrice:
   afford(g, team, 'vet', price);
   const s = slot(g, team.id);
   s.animal = a.id; s.spent.vet += price;
-  g.market.animals[a.id] = now; // snaps back to full price for everyone
+  resetListing(g.market, 'animals', a.id, now);
   log(g, now, team, 'animal', `bought ${a.emoji} ${a.name} for $${price}`);
   return price;
 }
@@ -253,7 +265,7 @@ export function buyRocket(g: Game, playerId: string, rocketId: string, maxPrice:
   afford(g, team, 'pilot', price);
   const s = slot(g, team.id);
   s.rocket = r.id; s.spent.pilot += price;
-  g.market.rockets[r.id] = now;
+  resetListing(g.market, 'rockets', r.id, now);
   log(g, now, team, 'rocket', `bought a ${r.name} for $${price}`);
   return price;
 }

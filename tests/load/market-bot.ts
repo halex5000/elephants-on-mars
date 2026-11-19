@@ -4,6 +4,8 @@ import { auctionPrice, fuelInPool } from '../../src/shared/market.js';
 
 export interface Crew {
   team: string;
+  switchedAnimal?: boolean;
+  extraPilotDollar?: boolean;
   // Teammates communicate their selected animal size and purchased rocket's fuel requirement.
   size?: string;
   need?: number;
@@ -20,7 +22,7 @@ const funding: Role[] = ['engineer', 'pilot', 'vet', 'pilot', 'vet', 'engineer',
 const animals = ['cat', 'kangaroo', 'rhino', 'penguin', 'gorilla', 'elephant', 'rabbit', 'croc', 'hippo', 'giraffe'];
 
 // Each role acts from its own WebSocket view. Observe the last action before sending another.
-export function marketBot(client: Client, crew: Crew, variant: number, clock: () => number) {
+export function marketBot(client: Client, crew: Crew, variant: number, clock: () => number, adaptive = false) {
   let next = 0, dollarsSent = 0, errorIndex = client.errors.length;
   let confirmed: (() => boolean) | undefined;
   const desired = animals[variant % animals.length]!;
@@ -52,7 +54,11 @@ export function marketBot(client: Client, crew: Crew, variant: number, clock: ()
     confirmed = undefined;
     const balance = (role: Role) => team.roster.find(r => r.role === role)!.balance;
     if (consoles.captain) {
-      const to = funding[dollarsSent];
+      let to = funding[dollarsSent];
+      if (adaptive && dollarsSent === funding.length - 1 && team.status.animal && !team.status.rocket) {
+        to = 'pilot';
+        crew.extraPilotDollar = true;
+      }
       if (to && balance('captain') >= 1) {
         const before = balance('captain');
         client.act({ a: 'transfer', from: 'captain', to, amount: 1 });
@@ -64,8 +70,20 @@ export function marketBot(client: Client, crew: Crew, variant: number, clock: ()
       }
     }
     if (consoles.vet) {
-      const animal = consoles.vet.animals.find(a => a.id === desired)!;
-      crew.size = animal.size;
+      const vet = consoles.vet;
+      const preferred = vet.animals.find(a => a.id === desired)!;
+      let animal = preferred;
+      // Once a minute has elapsed, accept an affordable smaller payload. It also
+      // fits a rocket the Pilot may already be buying for the original target.
+      if (adaptive && !vet.bought && now >= v.endsAt - 180_000 && auctionPrice(preferred.base, preferred.resetAt, now) > balance('vet')) {
+        animal = vet.animals.filter(a => sizes.indexOf(a.size) <= sizes.indexOf(preferred.size)
+          && auctionPrice(a.base, a.resetAt, now) <= balance('vet')).sort((a, b) => b.points - a.points)[0] ?? preferred;
+      }
+      if (vet.bought) {
+        animal = vet.animals.find(a => a.id === vet.bought)!;
+        crew.switchedAnimal = animal.id !== desired;
+      }
+      crew.size = vet.bought ? animal.size : preferred.size;
       const price = auctionPrice(animal.base, animal.resetAt, now);
       if (!consoles.vet.bought && price <= balance('vet')) {
         client.act({ a: 'buyAnimal', animal: animal.id, maxPrice: price });

@@ -18,6 +18,7 @@ export interface ServerOptions {
   maxGames?: number; idleGameMs?: number; log?: (event: string, data?: Record<string, unknown>) => void;
   /** If set, creating a game requires this passcode. Players never need it. Use it on public hosts. */
   hostPasscode?: string;
+  extraListingMinTeams?: number;
   stateFile?: string; snapshotIntervalMs?: number;
 }
 
@@ -34,6 +35,9 @@ const safeEq = (a: string, b: string) => { const x = Buffer.from(a), y = Buffer.
 const token = () => randomBytes(18).toString('base64url');
 
 export async function startServer(opts: ServerOptions): Promise<{ server: Server; url: string; port: number; close: () => Promise<void>; games: Map<string, E.Game> }> {
+  if (opts.extraListingMinTeams !== undefined && (!Number.isSafeInteger(opts.extraListingMinTeams) || opts.extraListingMinTeams < 1)) {
+    throw new Error('EXTRA_LISTING_MIN_TEAMS must be a positive integer');
+  }
   const speed = opts.speed ?? 1;
   const now = opts.now ?? Date.now;
   const rng = opts.rng ?? Math.random;
@@ -147,7 +151,7 @@ export async function startServer(opts: ServerOptions): Promise<{ server: Server
     const needPlayer = () => { if (!c.playerId) throw new E.GameError('Join the game first.'); return c.playerId; };
     switch (action?.a) {
       case 'makeTeams': needHost(); E.makeTeams(g, rng, action.settings); break;
-      case 'startRound': needHost(); E.startRound(g, t, rng); break;
+      case 'startRound': needHost(); E.startRound(g, t, rng, opts.extraListingMinTeams); break;
       case 'endRound': needHost(); E.endRound(g); break;
       case 'finish': needHost(); E.finish(g); break;
       case 'newGame': needHost(); E.newGame(g, t); break;

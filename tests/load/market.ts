@@ -8,9 +8,12 @@ import { seeded } from '../helpers.js';
 import { marketBot, type Crew } from './market-bot.js';
 
 const speed = 8;
-async function run(teams: number, trial: number) {
+
+type Mode = { label: string; adaptive: boolean; copies: boolean };
+async function run(teams: number, trial: number, mode: Mode) {
   const clock = fastClock(speed);
   const app = await startServer({ host: '127.0.0.1', port: 0, publicDir: resolve('dist/public'),
+    extraListingMinTeams: mode.copies ? 26 : undefined,
     speed, now: clock, rng: seeded(trial), log: () => {} });
   const players: Client[] = [];
   const rows = [];
@@ -33,7 +36,7 @@ async function run(teams: number, trial: number) {
       const start = end - 240_000;
       const bots = players.map(p => {
         const team = p.pv.team!.id;
-        return marketBot(p, crews.get(team)!, Number(team.slice(1)) + trial + round - 3, clock);
+        return marketBot(p, crews.get(team)!, Number(team.slice(1)) + trial + round - 3, clock, mode.adaptive);
       });
       while (h.hv.phase === 'play') {
         if (clock() > end + 15_000) throw new Error('Server did not close the mission');
@@ -51,27 +54,48 @@ async function run(teams: number, trial: number) {
         assert.equal(c.firstFuel !== undefined, (picks?.fuelGrabs ?? 0) > 0, 'unobserved fuel purchase');
         const since = (at?: number) => at === undefined ? null : at - start;
         const wait = (from?: number) => from === undefined ? null : (c.firstFuel ?? end) - from;
-        rows.push({ trial, teams, round, team: c.team, openingFuel: c.openingStock, readyMs: since(c.ready),
+        rows.push({ mode: mode.label, trial, teams, round, team: c.team, points: result.points,
+          switchedAnimal: !!c.switchedAnimal, extraPilotDollar: !!c.extraPilotDollar,
+          openingFuel: c.openingStock, readyMs: since(c.ready),
           attemptMs: since(c.firstAttempt), firstFuelMs: since(c.firstFuel), waitFromReadyMs: wait(c.ready),
           waitFromAttemptMs: wait(c.firstAttempt), rocketAttempts: c.rocketAttempts, rocketFailures: c.rocketFailures,
           boughtAnimal: Boolean(result.animal), boughtRocket: Boolean(result.rocket),
           fuelSent: result.fuel, fuelNeeded: result.rocket?.fuel ?? null, landed: result.status === 'landed' });
       }
     }
-    console.log('Completed trial %d with %d teams', trial, teams);
+    console.log('Completed %s trial %d with %d teams', mode.label, trial, teams);
     return rows;
   } finally { await app.close(); }
 }
 
 const rows = [];
-for (const trial of [1, 2, 3]) for (const teams of [2, 25, 50]) rows.push(...await run(teams, trial));
-for (const teams of [2, 25, 50]) {
+const comparison = process.argv.includes('--auction-trials');
+const sizes = comparison ? [50] : [2, 25, 50];
+const modes: Mode[] = [{ label: 'baseline', adaptive: false, copies: false }];
+if (comparison) modes.push(
+  { label: 'adaptive', adaptive: true, copies: false },
+  { label: 'copies', adaptive: false, copies: true },
+  { label: 'both', adaptive: true, copies: true },
+);
+for (const trial of [1, 2, 3]) {
+  for (const teams of sizes) {
+    // Rotate order across trials so the baseline does not always run first.
+    for (let i = 0; i < modes.length; i++) {
+      const mode = modes[(i + trial - 1) % modes.length]!;
+      rows.push(...await run(teams, trial, mode));
+    }
+  }
+}
+for (const mode of modes) for (const teams of sizes) {
   for (const round of [1, 2]) {
-    const group = rows.filter(r => r.teams === teams && r.round === round);
+    const group = rows.filter(r => r.mode === mode.label && r.teams === teams && r.round === round);
     const longWait = group.filter(r => r.waitFromAttemptMs !== null && r.waitFromAttemptMs > 60_000);
-    console.log(JSON.stringify({ teams, round, observations: group.length,
+    console.log(JSON.stringify({ mode: mode.label, teams, round, observations: group.length,
       landed: group.filter(r => r.landed).length, rocketFailures: group.reduce((n, r) => n + r.rocketFailures, 0),
       rocketAttempts: group.reduce((n, r) => n + r.rocketAttempts, 0),
+      points: group.reduce((n, r) => n + r.points, 0), changedAnimal: group.filter(r => r.switchedAnimal).length,
+      extraPilotDollar: group.filter(r => r.extraPilotDollar).length,
+      withoutAnimal: group.filter(r => !r.boughtAnimal).length, withoutRocket: group.filter(r => !r.boughtRocket).length,
       firstFuelOver60s: longWait.length, noFuelAttempt: group.filter(r => r.attemptMs === null).length,
       attemptedWithoutPurchase: group.filter(r => r.attemptMs !== null && r.firstFuelMs === null).length }));
   }
