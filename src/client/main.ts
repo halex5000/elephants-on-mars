@@ -15,6 +15,8 @@ import {
 } from '../shared/protocol.js';
 import { auctionPrice, fuelInPool } from '../shared/market.js';
 import { planet, rocket, paw, rocketGlyph, drop, qr } from './art.js';
+import { landingMap, downloadPostcard } from './landing-map.js';
+import { esc } from './escape.js';
 import { resultsText } from './export.js';
 
 const RI: Record<Role, { t: string; i: string; d: string }> = {
@@ -37,8 +39,6 @@ const RI: Record<Role, { t: string; i: string; d: string }> = {
 };
 
 const $ = <T extends Element = HTMLElement>(s: string) => document.querySelector(s) as T | null;
-const esc = (s: unknown) =>
-  String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /* ---------- local identity (per tab for players, so one person can test 4 roles in 4 tabs) ---------- */
@@ -653,7 +653,7 @@ ${r.receipt ? `<section class="panel"><h3>Mission Control receipt</h3><p>${esc(r
 <span class="why ${o.status === 'landed' ? 'ok' : o.status === 'failed' ? 'bad' : ''}">${esc(o.message)}${o.rocket ? `. ${o.animal ? `${esc(o.animal.name)} (${o.animal.size}) in the ` : ''}${esc(o.rocket.name)} (${o.rocket.size}), fuel ${o.fuel} of ${o.rocket.fuel}` : ''}</span></div>`,
     )
     .join('')}</div></div></div>
-<div class="panel" style="margin-top:16px"><h3>Standings after ${plural(r.round, 'mission', 'missions')}</h3><div class="lb" style="margin-top:10px">${v.standings.map((s, i) => `<div class="r ${s.team === mine ? 'me' : ''}"><span class="rank">${i + 1}</span><span class="name">${esc(s.name)}</span><span></span><span class="num pts">${s.points}</span></div>`).join('')}</div><p class="sm mut">Talk it over: what did the winning team do differently this mission?</p></div>`;
+<div class="panel" style="margin-top:16px"><h3>Standings after ${plural(r.round, 'mission', 'missions')}</h3><div class="lb" style="margin-top:10px">${v.standings.map((s, i) => `<div class="r ${s.team === mine ? 'me' : ''}"><span class="rank">${i + 1}</span><span class="name">${esc(s.name)}</span><span></span><span class="num pts">${s.points}</span></div>`).join('')}</div><p class="sm mut">Talk it over: what did the winning team do differently this mission?</p></div>${landingMap(v, false)}`;
 }
 function terraBar(v: Common) {
   const t = v.terraform;
@@ -673,6 +673,7 @@ ${
     : `<div class="share row"><button data-act="copyResults">Copy results</button><span class="sm mut">Paste them in the meeting chat for the debrief.</span></div>
 <details class="panel share-text" ${ui.showResults ? 'open' : ''}><summary>Show results as text</summary><textarea id="results-text" readonly rows="12" aria-label="Results as text">${esc(resultsText(v))}</textarea></details>`
 }
+${landingMap(v, v.kind === 'host' && !projector)}
 <div class="final-grid"><div class="panel debrief"><h3>Debrief questions</h3><ol><li>Which role felt the most in the dark? What did you wish someone had told you sooner?</li><li>When did your team's communication start to click, and what changed?</li><li>How did the shared markets change your plans? Did you wait for a better deal or buy fast?</li><li>Did anyone sit on money or information? Why?</li><li>What's one habit from this game you'd bring to a real project?</li></ol></div><div>${planet(v.terraform.pct)}</div></div>`;
 }
 
@@ -754,6 +755,9 @@ document.addEventListener('click', e => {
     case 'qr':
       ui.qrBig = !ui.qrBig;
       render();
+      break;
+    case 'postcard':
+      if (view?.kind === 'host' && route.kind === 'host') downloadPostcard(view.code);
       break;
     case 'copyResults': {
       const text = view ? resultsText(view) : '';
