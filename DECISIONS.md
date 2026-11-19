@@ -2,6 +2,10 @@
 
 Why things are the way they are. Add an entry when you make a choice someone might otherwise undo. Newest first.
 
+### Seat recovery uses the returning tab's login (2026-11-19)
+
+The host matches a connected waiting player to an offline seat using the join ID shown on the player's screen. The server rechecks presence when the host clicks Restore seat. The team keeps its roles, balances and purchases. The returning tab keeps its new credentials for future refreshes, and removing the old registration invalidates the original login. Display names play no part in authorization.
+
 ### Extra auction copies are an opt-in playtest (2026-11-19)
 
 The server can assign a second independent price clock to every animal and rocket at mission start, based on the number of teams. The experiment uses a threshold of 26 teams. An unset threshold keeps the original rules. The existing role console always advertises the oldest clock, which gives the lowest price. A purchase advances only the sold copy, and the next buyer sees the other offer. The same maximum-price check protects concurrent buyers. Snapshot recovery keeps both clocks for the rest of the active mission. The next mission uses the current server setting.

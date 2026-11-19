@@ -161,11 +161,15 @@ export async function startServer(
       }, BATCH_MS),
     );
   }
+  function onlinePlayers(g: E.Game) {
+    const online = new Set<string>();
+    for (const c of conns) if (c.code === g.code && c.playerId && c.ws.readyState === WebSocket.OPEN) online.add(c.playerId);
+    return online;
+  }
   function flush(g: E.Game) {
     if (games.get(g.code) !== g) return;
     const t = now();
-    const online = new Set<string>();
-    for (const c of conns) if (c.code === g.code && c.playerId) online.add(c.playerId);
+    const online = onlinePlayers(g);
     const sh = shared(g, t, speed);
     let hostJson: string | undefined;
     for (const c of conns) {
@@ -251,6 +255,14 @@ export async function startServer(
         needHost();
         E.seatLatecomers(g);
         break;
+      case 'swapSeat': {
+        needHost();
+        const online = onlinePlayers(g);
+        if (online.has(action.offlineId)) throw new E.GameError('That player is back online.');
+        if (!online.has(action.newcomerId)) throw new E.GameError('The returning player must be connected.');
+        E.swapSeat(g, action.offlineId, action.newcomerId);
+        break;
+      }
       case 'removePlayer':
         needHost();
         E.removePlayer(g, String(action.playerId));

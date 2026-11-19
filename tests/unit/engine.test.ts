@@ -577,3 +577,38 @@ test('staggered sales advertise the oldest copy across a snapshot and reset next
   assert.equal(recovered.market.secondCopy, undefined);
   assert.equal(recovered.market.rockets.compact, second);
 });
+
+test('seat recovery preserves crew progress and retires the original credentials', () => {
+  const g = started(2);
+  const oldId = holder(g, 0, 'vet');
+  const old = g.players.find(p => p.id === oldId)!;
+  const seat = E.teamOf(g, oldId)!;
+  fund(g, 0, { vet: 9 });
+  E.buyAnimal(g, oldId, 'cat', 9, T0 + 1000);
+  const balance = E.balance(g, seat.team.id, 'vet');
+  E.addPlayer(g, 'newcomer', 'fresh-token', 'Returning', T0 + 2000);
+  E.swapSeat(g, oldId, 'newcomer');
+  assert.equal(g.players.length, 2);
+  assert.equal(
+    g.players.some(p => p.token === old.token),
+    false,
+  );
+  assert.equal(g.players.find(p => p.id === 'newcomer')?.name, old.name);
+  assert.deepEqual(E.teamOf(g, 'newcomer'), seat);
+  assert.equal(E.balance(g, seat.team.id, 'vet'), balance);
+  assert.equal(E.picksFor(g, seat.team.id, g.round).animal, 'cat');
+  assert.throws(() => E.swapSeat(g, oldId, 'newcomer'), E.GameError);
+});
+
+test('seat recovery rejects a seated replacement or a finished room without changing the roster', () => {
+  const g = started(4);
+  const [first, other] = g.players;
+  E.addPlayer(g, 'fresh', 'fresh-login', 'New arrival', T0);
+  const before = structuredClone(g.players);
+  throwsGame(() => E.swapSeat(g, first!.id, other!.id), /waiting/);
+  throwsGame(() => E.swapSeat(g, 'fresh', first!.id), /with a seat/);
+  E.endRound(g);
+  E.finish(g);
+  throwsGame(() => E.swapSeat(g, first!.id, 'fresh'), /before the game ends/);
+  assert.deepEqual(g.players, before);
+});

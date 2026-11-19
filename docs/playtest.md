@@ -12,7 +12,7 @@
 | Results · 2 min | Regroup. “What landed or stayed behind? Which decision took longest?” Record one example. Reopen breakouts and start mission 2. “Check your new role.” |
 | Final · 5 min | Click **Show the final report** and **Copy results**. Use the game’s debrief: Who felt in the dark? When did communication click? How did markets change your plan? Who held money or information, and why? What habit would you bring to work? |
 
-**Late arrival:** Have them join, click **Add them to teams**, then move them into the assigned breakout. **Dropped player:** Return to the same tab and refresh to reclaim the seat. A fresh join can create a duplicate. If you use **+1 minute**, record the extension for all crews.
+**Late arrival:** Have them join, click **Add them to teams**, then move them into the assigned breakout. **Dropped player:** Refresh the original tab. If it closed, have them rejoin and read you their join ID on the call. Select their **Offline seat** and **Returning player**, then click **Restore seat** before adding latecomers. If you use **+1 minute**, record the extension for all crews.
 
 **Observation slip · one per crew per round.** Ask the Engineer to note the clock at first fuel attempt ___ and first successful buy ___ (or *still waiting / never attempted / used stock*). Ask the Pilot for rejected buys ___. At zero: missing animal / rocket / fuel? ___ Landed? ___ Money moved from ___ to ___ because ___. Confusing moment or quote ___.
 

@@ -470,3 +470,23 @@ test('no console errors on any screen', async ({ browser }) => {
   await expect(host.locator('.joincode')).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('closed player tab rejoins on a phone and the host restores the funded Pilot seat', async ({ browser }) => {
+  const { host, code, byRole } = await setupMission(browser);
+  await give(byRole.captain, 'pilot', 3);
+  await byRole.pilot.close();
+  const returning = await (await browser.newContext({ viewport: { width: 375, height: 812 } })).newPage();
+  await returning.goto(`/join/${code}`);
+  await returning.locator('#jname').fill('Back on phone');
+  await returning.getByRole('button', { name: 'Join' }).click();
+  await expect(returning.getByText(/Tell the host your join ID/)).toBeVisible();
+  const seat = host.getByLabel('Offline seat');
+  await seat.selectOption({ index: 1 });
+  await host.getByLabel('Returning player').selectOption({ index: 1 });
+  await host.getByRole('button', { name: 'Restore seat' }).click();
+  await expect(returning.locator('[data-role=pilot]')).toBeVisible();
+  await expect(wallet(returning)).toHaveText('$3');
+  await returning.reload();
+  await expect(wallet(returning)).toHaveText('$3');
+  await expect(host.getByRole('button', { name: 'Add them to teams' })).toHaveCount(0);
+});

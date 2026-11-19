@@ -22,6 +22,7 @@ export type Action =
   | { a: 'newGame' }
   | { a: 'addTime'; seconds: number }
   | { a: 'seatLatecomers' }
+  | { a: 'swapSeat'; offlineId: string; newcomerId: string }
   | { a: 'removePlayer'; playerId: string }
   | { a: 'transfer'; from: Role; to: Role; amount: number }
   /** maxPrice: the price the player saw; refused if someone reset the auction meanwhile */
@@ -129,7 +130,7 @@ export interface Common {
 export interface HostView extends Common {
   kind: 'host';
   players: { id: string; name: string; connected: boolean; seated: boolean }[];
-  teams: { id: string; name: string; members: { name: string; roles: Role[]; connected: boolean }[]; status: TeamStatus }[];
+  teams: { id: string; name: string; members: { id: string; name: string; roles: Role[]; connected: boolean }[]; status: TeamStatus }[];
   fuel?: FuelMarket;
 }
 

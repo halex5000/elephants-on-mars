@@ -384,3 +384,38 @@ describe('http', () => {
     await sleep(10);
   });
 });
+
+test('only the host can restore an offline seat and the old token stops working', async () => {
+  const {
+    h,
+    code,
+    players: [old],
+  } = await lobby(1);
+  h.act({ a: 'makeTeams' });
+  await h.until(() => h.hv.phase === 'teams');
+  h.act({ a: 'startRound' });
+  await old!.until(() => old!.pv.phase === 'play');
+  const originalTeam = old!.pv.team!;
+  const oldId = old!.creds!.playerId!;
+  const returning = await join(app.url, code, old!.pv.me.name);
+  assert.equal(returning.pv.team, undefined);
+  const swap = { a: 'swapSeat', offlineId: oldId, newcomerId: returning.creds!.playerId! } as const;
+  returning.act(swap);
+  await returning.until(() => returning.errors.some(e => /Only the host/.test(e)));
+  h.act(swap);
+  await h.until(() => h.errors.some(e => /back online/.test(e)));
+  old!.close();
+  await h.until(() => h.hv.players.some(p => p.id === oldId && !p.connected));
+  h.act(swap);
+  await returning.until(() => returning.pv.team?.id === originalTeam.id);
+  assert.deepEqual(returning.pv.team!.roles, originalTeam.roles);
+  await h.until(() => h.hv.players.length === 1 && h.hv.players[0]!.seated);
+  const stale = new Client(app.url);
+  await stale.opened;
+  stale.send({ t: 'resume', code, playerId: oldId, token: old!.creds!.token! });
+  await stale.until(() => stale.errors.length > 0);
+  assert.equal(stale.view, null);
+  returning.act({ a: 'transfer', from: 'captain', to: 'pilot', amount: 1 });
+  await returning.until(() => returning.pv.team!.roster.some(r => r.role === 'pilot' && r.balance === 1));
+  closeAll(h, returning, stale);
+});
