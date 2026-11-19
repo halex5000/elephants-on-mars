@@ -343,6 +343,8 @@ function render() {
   document.body.classList.toggle('projector', route.kind === 'screen');
   morphdom($('#app')!, next, {
     onBeforeElUpdated(from, to) {
+      // never touch a video someone may be watching (players joining re-render the lobby)
+      if (from instanceof HTMLVideoElement) return false;
       // a <details> someone opened or closed stays that way across server updates
       if (from instanceof HTMLDetailsElement) (to as HTMLDetailsElement).open = from.open || (to as HTMLDetailsElement).open;
       if (from instanceof HTMLInputElement || from instanceof HTMLSelectElement || from instanceof HTMLTextAreaElement) {
@@ -400,6 +402,16 @@ function howTo() {
 }
 
 /* ---------- landing ---------- */
+/**
+ * The 60-second explainer, served from this app (no YouTube: nothing loads from a third party).
+ * preload="none" so phones don't download 4 MB unless someone presses play. Captions included.
+ */
+function explainerVideo(where: 'home' | 'lobby') {
+  const video = `<video id="explainer-${where}" class="explainer" controls preload="none" playsinline poster="/media/explainer-poster.jpg" width="1280" height="720"><source src="/media/explainer.mp4" type="video/mp4"><track kind="captions" src="/media/explainer.vtt" srclang="en" label="English" default>Your browser can't play this video. <a href="/media/explainer.mp4">Download it</a>.</video>`;
+  return where === 'home'
+    ? `<section class="panel stack explainer-panel"><h2>New here? Watch the 60-second explainer</h2>${video}</section>`
+    : `<details class="panel explainer-panel"><summary>Play the 60-second explainer for everyone</summary>${video}</details>`;
+}
 function home() {
   return band(`${fatal ? `<p class="pill bad">${esc(fatal)}</p>` : ''}
 <div class="hero"><div><h1>Elephants on Mars</h1><p>Four roles, one rocket, and everyone sees a different piece of the plan. Talk fast, land animals, terraform a planet together.</p></div>${planet(35)}</div>
@@ -411,7 +423,7 @@ function home() {
 <form class="panel stack" data-form="create" novalidate><h2>Host a game</h2><p class="mut m0">Get a code to share on your video call. You run the clock, the big screen and the debrief. Hosts don't play.</p>
 ${ui.needPass ? `<label class="f">Host passcode<input id="hpass" type="password" data-k="pass" autocomplete="current-password" value="${esc(ui.pass)}"></label><p class="mut m0 sm">This server only lets people with the passcode host games. Players don't need it.</p>` : ''}
 <button class="ghost" ${ui.busy ? 'disabled' : ''}>Create a game</button></form>
-</div>${rolesExplainer()}${howTo()}`);
+</div>${explainerVideo('home')}${rolesExplainer()}${howTo()}`);
 }
 
 /* ---------- host ---------- */
@@ -458,7 +470,7 @@ ${ctl}${v.phase === 'lobby' ? `<div class="row"><button class="ghost" aria-press
 
   let body = '';
   if (v.phase === 'lobby')
-    body = `<h2>Lobby</h2><p class="mut">Share the code. When everyone's in, make teams.</p>${rolesExplainer()}${howTo()}`;
+    body = `<h2>Lobby</h2><p class="mut">Share the code. When everyone's in, make teams.</p>${explainerVideo('lobby')}${rolesExplainer()}${howTo()}`;
   else if (v.phase === 'teams')
     body = `<h2>Teams</h2><p class="mut">Send each team to its breakout room, then start mission 1.</p>${teamCards(v)}<details class="panel" style="margin-top:16px"><summary>Players (${v.players.length})</summary>${chips}</details>`;
   else if (v.phase === 'play') body = bigScreen(v);

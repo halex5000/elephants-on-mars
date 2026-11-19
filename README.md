@@ -186,6 +186,18 @@ Sourced from the original's "How it works" video and its gameplay footage where 
 
 All balance numbers live in `src/server/catalog.ts` and `src/shared/market.ts`; `tests/unit/engine.test.ts` has economy guardrails that keep tuning sane.
 
+## Explainer video
+
+A 60-second explainer plays on the home page and in the host lobby (`src/public/media/`). It's served by the app itself (no YouTube), with byte-range support so Safari and iPhones can play it, `preload="none"` so phones only download it on play, and captions (`explainer.vtt`).
+
+To replace it (e.g. a new voiceover take):
+
+```bash
+ffmpeg -i new-cut.mp4 -c copy -movflags +faststart src/public/media/explainer.mp4   # index at the front: starts playing immediately
+```
+
+Update `explainer.vtt` if the words changed (one cue per line, `HH:MM:SS.mmm --> HH:MM:SS.mmm`), and the poster with `ffmpeg -ss 4.2 -i new-cut.mp4 -frames:v 1 -q:v 3 src/public/media/explainer-poster.jpg`.
+
 ## Look and feel
 
 Phone-first glass consoles with one accent per role (Captain brass, Vet green, Pilot blue, Engineer red), a shared screen over a Mars that turns green and blue as the group terraforms it, and a final "Mission report" leaderboard. All art is hand-drawn SVG in `src/client/art.ts`. Fonts (Saira Condensed and Nunito Sans, both SIL Open Font License) are bundled and served by the app itself, so no player's browser calls out to Google or any other third party; the server's content security policy enforces that.

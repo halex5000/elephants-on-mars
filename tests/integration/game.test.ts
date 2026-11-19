@@ -383,6 +383,30 @@ describe('connections', () => {
 });
 
 describe('http', () => {
+  test('explainer video: byte ranges (206/416), media types, captions', async () => {
+    const full = await fetch(`${app.url}/media/explainer.mp4`);
+    assert.equal(full.status, 200);
+    assert.equal(full.headers.get('accept-ranges'), 'bytes');
+    assert.equal(full.headers.get('content-type'), 'video/mp4');
+    const size = Number(full.headers.get('content-length'));
+    const whole = Buffer.from(await full.arrayBuffer());
+    assert.equal(whole.length, size);
+    const part = await fetch(`${app.url}/media/explainer.mp4`, { headers: { range: 'bytes=100-199' } });
+    assert.equal(part.status, 206);
+    assert.equal(part.headers.get('content-range'), `bytes 100-199/${size}`);
+    assert.deepEqual(Buffer.from(await part.arrayBuffer()), whole.subarray(100, 200));
+    const tail = await fetch(`${app.url}/media/explainer.mp4`, { headers: { range: 'bytes=-10' } });
+    assert.equal(tail.status, 206);
+    assert.deepEqual(Buffer.from(await tail.arrayBuffer()), whole.subarray(size - 10));
+    const bad = await fetch(`${app.url}/media/explainer.mp4`, { headers: { range: `bytes=${size}-` } });
+    assert.equal(bad.status, 416);
+    assert.equal(bad.headers.get('content-range'), `bytes */${size}`);
+    const vtt = await fetch(`${app.url}/media/explainer.vtt`);
+    assert.match(vtt.headers.get('content-type') ?? '', /^text\/vtt/);
+    assert.match(await vtt.text(), /^WEBVTT/);
+    assert.equal((await fetch(`${app.url}/media/explainer-poster.jpg`)).headers.get('content-type'), 'image/jpeg');
+  });
+
   test('healthz, app routes, security headers, no path traversal', async () => {
     const hz = (await (await fetch(`${app.url}/healthz`)).json()) as { ok: boolean };
     assert.equal(hz.ok, true);
