@@ -5,7 +5,7 @@ import {
   ROLES, type Role, type ClientMsg, type ServerMsg, type HostView, type PlayerView, type Common, type Outcome, type Settings, type FeedItem, type FuelMarket,
 } from '../shared/protocol.js';
 import { auctionPrice, fuelInPool } from '../shared/market.js';
-import { planet, rocket, paw, rocketGlyph, drop } from './art.js';
+import { planet, rocket, paw, rocketGlyph, drop, qr } from './art.js';
 
 const RI: Record<Role, { t: string; i: string; d: string }> = {
   captain: { t: 'Captain', i: '🧑‍✈️', d: 'You hold the money and the launch button. Send your crew what they need, and launch once the animal, rocket and fuel are all in.' },
@@ -37,7 +37,7 @@ const ui = {
   amt: {} as Record<string, string>, to: {} as Record<string, string>,
   set: { minutes: '4', income: '10', teamSize: '4', rounds: '6' } as Record<keyof Settings, string>,
   confirm: 0, busy: false, help: false,
-  pass: '', needPass: false,
+  pass: '', needPass: false, qrBig: false,
 };
 const PASS_KEY = 'eom-host-pass';
 
@@ -219,7 +219,7 @@ function hostPage(v: HostView): string {
   } else ctl = `<div class="row"><button data-act="newGame">New game with the same players</button><a class="pill" href="/">Back to start</a></div>`;
 
   const chips = `<div class="chips">${v.players.map(p => `<span class="${p.connected ? '' : 'off'}">${esc(p.name)}${v.phase === 'lobby' || v.phase === 'teams' ? ` <button class="ghost sm" data-act="removePlayer" data-id="${esc(p.id)}" aria-label="Remove ${esc(p.name)}">✕</button>` : ''}</span>`).join('') || '<span class="mut">Nobody yet</span>'}</div>`;
-  const bar = `<section class="band hostbar ${v.phase === 'lobby' ? '' : 'compact'}"><div class="wrap stack"><div class="top"><div><span class="sm mut">Join at ${esc(location.host)} with code</span><div class="joincode">${esc(v.code)}</div></div><div class="stack" style="text-align:right"><button class="ghost sm" data-act="copy" data-v="${esc(joinUrl)}">Copy join link</button><span class="sm mut">Host controls, only you see these</span></div></div>
+  const bar = `<section class="band hostbar ${v.phase === 'lobby' ? '' : 'compact'}"><div class="wrap stack"><div class="top"><div class="joinwho">${joinQr(v, joinUrl)}<div><span class="sm mut">Scan, or join at ${esc(location.host)} with code</span><div class="joincode">${esc(v.code)}</div></div></div><div class="stack" style="text-align:right"><button class="ghost sm" data-act="copy" data-v="${esc(joinUrl)}">Copy join link</button><span class="sm mut">Host controls, only you see these</span></div></div>
 ${ctl}${un.length && v.phase !== 'lobby' && v.phase !== 'final' ? `<div class="row"><span>${plural(un.length, 'player is', 'players are')} waiting without a team.</span><button class="ghost" data-act="seatLatecomers">Add them to teams</button></div>` : ''}${v.phase === 'lobby' ? chips : ''}</div></section>`;
 
   let body = '';
@@ -229,6 +229,12 @@ ${ctl}${un.length && v.phase !== 'lobby' && v.phase !== 'final' ? `<div class="r
   else if (v.phase === 'results') body = missionReport(v);
   else body = finalReport(v);
   return bar + band(body);
+}
+/** Big in the lobby; during play a small tap-to-enlarge code for latecomers. */
+function joinQr(v: HostView, joinUrl: string) {
+  const code = qr(joinUrl, `QR code to join game ${v.code}`);
+  if (v.phase === 'lobby') return `<div class="qrbox big">${code}</div>`;
+  return `<button class="qrbox ${ui.qrBig ? 'big' : 'small'}" data-act="qr" aria-expanded="${ui.qrBig}" aria-label="${ui.qrBig ? 'Shrink' : 'Enlarge'} the join QR code">${code}</button>`;
 }
 function teamCards(v: HostView) {
   const names = v.teams.map(t => t.name);
@@ -385,6 +391,7 @@ document.addEventListener('click', e => {
     case 'sendFuel': act({ a: 'sendFuel' }); break;
     case 'give': act({ a: 'transfer', from: 'captain', to: d.to as Role, amount: 1 }); break;
     case 'help': ui.help = !ui.help; render(); break;
+    case 'qr': ui.qrBig = !ui.qrBig; render(); break;
     case 'launch':
       if (Date.now() - ui.confirm > 4000) { ui.confirm = Date.now(); render(); setTimeout(render, 4100); return; }
       ui.confirm = 0; act({ a: 'launch' }); toast('🚀 Launched! Results at the end of the mission.'); break;
