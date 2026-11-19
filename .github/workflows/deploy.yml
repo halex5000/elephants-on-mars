@@ -1,0 +1,66 @@
+# Manual deploy to Fly.io: Actions → "Deploy to Fly" → Run workflow → type "deploy".
+# Manual on purpose: a deploy restarts the server, which ends any live game
+# (unless STATE_FILE snapshots on a volume are set up). Never deploy mid-event.
+#
+# Setup once: `fly tokens create deploy -x 999999h`, then add the whole output
+# (including "FlyV1 ") as the repository secret FLY_API_TOKEN.
+name: Deploy to Fly
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy". This restarts the server and ends any game in progress.'
+        required: true
+
+concurrency:
+  group: fly-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  deploy:
+    name: Deploy main to Fly
+    if: github.ref == 'refs/heads/main' && inputs.confirm == 'deploy'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require green CI on this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          conclusion=$(gh api "repos/${{ github.repository }}/actions/workflows/ci.yml/runs?head_sha=${{ github.sha }}&per_page=1" --jq '.workflow_runs[0].conclusion // "missing"')
+          echo "CI on ${{ github.sha }}: $conclusion"
+          if [ "$conclusion" != "success" ]; then
+            echo "::error::CI hasn't passed on this commit ($conclusion). Wait for it, or fix main first."
+            exit 1
+          fi
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy (exactly one machine)
+        run: flyctl deploy --remote-only --ha=false
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Check there is exactly one machine and it's healthy
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          count=$(flyctl machines list --json | jq 'length')
+          echo "machines: $count"
+          if [ "$count" != "1" ]; then
+            echo "::error::Expected exactly 1 machine, found $count. Game state is in memory; two machines split players. Fix with: fly scale count 1"
+            exit 1
+          fi
+          app=$(grep -E "^app *=" fly.toml | sed -E "s/^app *= *['\"]([^'\"]+)['\"].*/\1/")
+          for i in $(seq 1 20); do
+            if curl -fsS "https://$app.fly.dev/healthz"; then echo; exit 0; fi
+            sleep 3
+          done
+          echo "::error::https://$app.fly.dev/healthz didn't answer"; exit 1

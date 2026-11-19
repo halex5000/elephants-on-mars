@@ -95,6 +95,8 @@ fly ips list                           # shared IPv4 is free; you don't need a d
 
 Then open `https://<app>.fly.dev`. Logs: `fly logs`.
 
+**Later deploys, from GitHub (one click):** run `fly tokens create deploy -x 999999h` once and save the whole output as the repo secret `FLY_API_TOKEN`. Then use **Actions → Deploy to Fly → Run workflow** and type `deploy`. It refuses unless CI passed on that commit, deploys with `--ha=false`, and fails loudly if Fly ends up with anything other than exactly one machine. It's manual on purpose: merging to `main` never restarts a live game.
+
 ### Render (free tier to try, $7/mo Starter to keep)
 
 `render.yaml` is a Blueprint. Push the repo to GitHub, then in Render choose **New → Blueprint**, pick the repo, and enter `HOST_PASSCODE` when asked. The free plan sleeps after 15 minutes without traffic and takes about a minute to wake, so open the site a few minutes before you play. Switch `plan` to `starter` to keep it awake.
