@@ -2,6 +2,10 @@
 
 Why things are the way they are. Add an entry when you make a choice someone might otherwise undo. Newest first.
 
+### The Captain can take unspent money back (2026-11-19)
+
+A wrong Give $1 was permanent, which made one misclick costly (found by Alex while testing). The Captain now has −$1 next to each crew member: it moves unspent money back, checked on the server, and can't touch money already spent. It's our addition (the original's footage doesn't show one), so it's marked in the README. Crew members could already send money back through the engine; that has no button yet.
+
 ### Seat recovery uses the returning tab's login (2026-11-19)
 
 The host matches a connected waiting player to an offline seat using the join ID shown on the player's screen. The server rechecks presence when the host clicks Restore seat. The team keeps its roles, balances and purchases. The returning tab keeps its new credentials for future refreshes, and removing the old registration invalidates the original login. Display names play no part in authorization.

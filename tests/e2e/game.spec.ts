@@ -168,6 +168,19 @@ test('a full mission through the real UI lands the animal', async ({ browser }) 
   await expect(R.engineer.locator('#winner')).toContainText('wins with 40 points');
 });
 
+test('the Captain can undo a wrong Give $1 with −$1', async ({ browser }) => {
+  const { byRole: R } = await setupMission(browser);
+  const back = (r: Role) => R.captain.getByRole('button', { name: `Take $1 back from the ${r[0]!.toUpperCase()}${r.slice(1)}` });
+  await expect(back('pilot')).toBeDisabled(); // nothing to take back yet
+  await give(R.captain, 'pilot', 3); // meant for the Vet
+  await back('pilot').click();
+  await back('pilot').click();
+  await expect(R.captain.locator('[data-wallet-of=pilot]')).toHaveText('$1');
+  await expect(wallet(R.pilot)).toHaveText('$1');
+  await give(R.captain, 'vet', 2);
+  await expect(wallet(R.vet)).toHaveText('$2');
+});
+
 test('roles reshuffle for mission 2', async ({ browser }) => {
   const { host, players } = await setupMission(browser);
   const before = await Promise.all(players.map(roleOf));

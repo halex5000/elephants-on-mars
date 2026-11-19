@@ -203,6 +203,33 @@ describe('money', () => {
     assert.equal(E.balance(g, tid(g, 0), 'vet'), 250, 'fractions floored');
   });
 
+  test('the Captain can take back unspent money, and only unspent money', () => {
+    const g = started(4);
+    const cap = holder(g, 0, 'captain'),
+      vet = holder(g, 0, 'vet'),
+      t = tid(g, 0);
+    fund(g, 0, { vet: 5, pilot: 2 });
+    const capBefore = E.balance(g, t, 'captain');
+    E.reclaim(g, cap, 'vet', 1, T0);
+    assert.equal(E.balance(g, t, 'vet'), 4);
+    assert.equal(E.balance(g, t, 'captain'), capBefore + 1);
+    // spend some, then try to take back more than is left
+    const price = E.animalPriceNow(g, 'cat', T0 + SETTLED);
+    E.buyAnimal(g, vet, 'cat', price, T0 + SETTLED);
+    const left = E.balance(g, t, 'vet');
+    assert.equal(left, 4 - price);
+    throwsGame(() => E.reclaim(g, cap, 'vet', left + 1, T0 + SETTLED), /doesn't have/);
+    E.reclaim(g, cap, 'vet', left, T0 + SETTLED);
+    assert.equal(E.balance(g, t, 'vet'), 0, 'spent money stays spent');
+    // only the Captain, never from the Captain, positive amounts only
+    throwsGame(() => E.reclaim(g, vet, 'pilot', 1, T0), /Only the captain/);
+    throwsGame(() => E.reclaim(g, cap, 'captain', 1, T0), /crew member/);
+    throwsGame(() => E.reclaim(g, cap, 'pilot', 0, T0), /above zero/);
+    E.endRound(g);
+    E.finish(g);
+    throwsGame(() => E.reclaim(g, cap, 'pilot', 1, T0), /can't move/);
+  });
+
   test("a player can't move another team's money", () => {
     const g = started(8);
     E.transfer(g, holder(g, 1, 'captain'), 'captain', 'vet', 100, T0);

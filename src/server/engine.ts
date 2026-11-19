@@ -380,6 +380,21 @@ export function transfer(g: Game, playerId: string, from: Role, to: Role, amount
   g.transfers.push({ team: team.id, from, to, amount: amt, round: g.round, at: now });
 }
 
+/**
+ * The Captain takes unspent money back from a crew role (an undo for a wrong Give $1).
+ * Our own rule: the original doesn't show one. Spent money stays spent.
+ */
+export function reclaim(g: Game, playerId: string, from: Role, amount: number, now: number) {
+  if (!ROLES.includes(from)) fail('Unknown role.');
+  if (from === 'captain') fail('Pick a crew member to take money back from.');
+  if (!['teams', 'play', 'results'].includes(g.phase)) fail("Money can't move right now.");
+  const team = actor(g, playerId, 'captain');
+  const amt = Math.floor(Number(amount));
+  if (!Number.isFinite(amt) || amt <= 0) fail('Enter an amount above zero.');
+  if (amt > balance(g, team.id, from)) fail(`The ${from} doesn't have $${amt} left to give back.`);
+  g.transfers.push({ team: team.id, from, to: 'captain', amount: amt, round: g.round, at: now });
+}
+
 export function buyAnimal(g: Game, playerId: string, animalId: string, maxPrice: number, now: number) {
   const team = actor(g, playerId, 'vet');
   guardMission(g, team, now);
