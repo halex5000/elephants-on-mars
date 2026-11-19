@@ -182,11 +182,13 @@ export function playerView(g: Game, playerId: string, now: number, sh: Shared = 
         resetAt: g.market.animals[a.id]!,
       })),
       bought: p.animal,
+      paid: p.animal ? p.animalPaid : undefined,
     };
   if (roles.includes('pilot'))
     c.pilot = {
       rockets: ROCKETS.map(k => ({ id: k.id, name: k.name, size: k.size, fuel: k.fuel, base: k.base, resetAt: g.market.rockets[k.id]! })),
       bought: p.rocket,
+      paid: p.rocket ? p.rocketPaid : undefined,
     };
   if (roles.includes('engineer'))
     c.engineer = { market: fuelMarket(g), stock: fuelStockOf(g, team.id), sent: p.fuel, sendStep: FUEL_SEND_STEP };

@@ -27,10 +27,11 @@ _Last updated 2026-11-19 by Dex. Replace this block when you hand off; don't pre
 
 | #   | Item                                      | Notes                                                                                                                                                                                                                                               |
 | --- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| N2  | Tune the economy from the playtest        | All numbers live in `src/server/catalog.ts` and `src/shared/market.ts`. Economy guardrail tests in `tests/unit/engine.test.ts`.                                                                                                                     |
+| N2  | Tune the economy (dominant XL strategy) | QA pass found money never binds: Orca + Mammoth = $7 for 55 pts/mission, $10 income + carryover. Options and suggestion in `docs/qa-2026-11-19.md`. **Alex decides** after a human playtest; quickest test is Money per mission = 7 in the lobby. |
 | N3  | Big-game fuel contention                  | In the 200-player load test, 50 engineers sharing one pool stretched the first mission past 4 minutes (later missions fine thanks to carried-over stock). Options: raise `FUEL.ratePerTeam`, raise the cap, or start each team with a little stock. |
 | N5  | Captain's "Restart" button                | The original has one; what it does isn't shown. Ask someone who's played (Alex has played the original).                                                                                                                                            |
 | N6  | Build and run the Docker image locally    | `docker compose up --build` with OrbStack. Never built by a worker yet; Fly's remote builder or CI will be first.                                                                                                                                   |
+| N18 | Final report polish | Leaderboard lists a team's bots but not its humans; big empty area beside a one-team leaderboard. From the QA pass. |
 | N11 | 50-team play: market sectors + big screen | Proposal merged (`docs/scale-50-teams.md`). Default-budget results favor keeping the shared fuel pool. Trial the optional auction treatment (`EXTRA_LISTING_MIN_TEAMS`) with people before enabling it.                                             |
 
 ## Later
@@ -46,6 +47,7 @@ _Last updated 2026-11-19 by Dex. Replace this block when you hand off; don't pre
 
 ## Done
 
+- QA pass (Claude): Launch no longer looks ready on short fuel, phones show every animal/rocket, bought items show the price paid, broke players are told to ask the Captain. Findings: `docs/qa-2026-11-19.md`
 - Seat swap (N14, Dex, #16): host restores an offline seat to a returning player by join ID; old login retired
 - First deploy to Fly (D1) via the one-click workflow; live smoke check passed
 - Launch moment (N8): a rocket lifts off over the shared screen per launch (max 3 at once, "+N more"), fades in place with reduced motion, never replayed on reload

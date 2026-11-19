@@ -160,10 +160,13 @@ export interface CaptainConsole {
 export interface VetConsole {
   animals: { id: string; name: string; emoji: string; size: string; points: number; base: number; resetAt: number }[];
   bought?: string;
+  /** what the team paid for `bought` (the listing's live price has since jumped) */
+  paid?: number;
 }
 export interface PilotConsole {
   rockets: { id: string; name: string; size: string; fuel: number; base: number; resetAt: number }[];
   bought?: string;
+  paid?: number;
 }
 /** stock = the team's fuel reserve (carries over between missions); sent = fuel loaded into this mission's rocket */
 export interface EngineerConsole {
