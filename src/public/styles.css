@@ -222,3 +222,11 @@ label.f{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:70
 @media(max-width:760px){.final-grid{grid-template-columns:minmax(0,1fr)}.final-grid .planet{max-width:260px;margin:0 auto;display:block}}
 .hostbar.compact .joincode{font-size:clamp(34px,4vw,48px)}
 .hostbar.compact{padding-block:12px}
+.joinwho{display:flex;align-items:flex-end;gap:20px}
+.qrbox{display:block;flex:none;padding:0;border:0;background:none;border-radius:8px;line-height:0}
+.qrbox .qr{width:100%;height:auto;display:block;border-radius:8px}
+.qrbox.big{width:clamp(132px,16vw,184px)}
+.qrbox.small{width:56px;cursor:zoom-in}
+button.qrbox.big{cursor:zoom-out}
+button.qrbox:focus-visible{outline:3px solid var(--captain);outline-offset:3px}
+@media (max-width:520px){.joinwho{gap:14px}.qrbox.big{width:112px}}

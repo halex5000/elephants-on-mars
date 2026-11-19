@@ -1,3 +1,4 @@
+import { encode } from 'uqr';
 // Hand-drawn SVG for the game: no image files, nothing borrowed.
 let uid = 0;
 
@@ -47,4 +48,24 @@ export function tank(level: number, color: string): string {
 <rect x="10" y="${110 - h}" width="76" height="${h + 2}" fill="${color}" opacity=".85" clip-path="url(#${id})"/>
 <path d="M10 44h76M10 80h76" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
 <rect x="34" y="6" width="28" height="10" rx="3" fill="rgba(255,255,255,.35)"/></svg>`;
+}
+
+/**
+ * A QR code as one crisp SVG path: dark modules on a white tile with a quiet zone,
+ * because many phone scanners can't read light-on-dark codes. Generated locally
+ * (no third-party QR service). Medium error correction survives a blurry screen share.
+ */
+const qrCache = new Map<string, string>();
+export function qr(text: string, label: string): string {
+  let path = qrCache.get(text);
+  if (!path) {
+    const { data, size } = encode(text, { ecc: 'M', border: 0 });
+    let d = '';
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (data[y]![x]) d += `M${x} ${y}h1v1h-1z`;
+    path = `${size}|${d}`;
+    qrCache.set(text, path);
+  }
+  const [n, d] = path.split('|') as [string, string];
+  const q = 4, v = Number(n) + q * 2;
+  return `<svg class="qr" viewBox="${-q} ${-q} ${v} ${v}" role="img" aria-label="${label}" shape-rendering="crispEdges"><rect x="${-q}" y="${-q}" width="${v}" height="${v}" fill="#fff" rx="2"/><path d="${d}" fill="#0b0f24"/></svg>`;
 }

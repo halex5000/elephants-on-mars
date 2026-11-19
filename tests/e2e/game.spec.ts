@@ -3,6 +3,7 @@
 // The server runs with GAME_SPEED=10 (see playwright.config.ts) so the fuel pool
 // fills in seconds; tests use long missions to compensate.
 import { test, expect, type Browser, type Page } from '@playwright/test';
+import jsQRModule from 'jsqr';
 import { E2E_PASSCODE } from './env.js';
 
 type Role = 'captain' | 'vet' | 'pilot' | 'engineer';
@@ -208,6 +209,53 @@ test('regression: a play or host link opened in another browser goes to the join
     await expect(p.locator('#jcode')).toHaveValue(code);
     await expect(p.locator('.pill.bad')).toBeVisible();
   }
+});
+
+// jsqr is CommonJS with a `default` export; unwrap it the same way under tsc and Playwright.
+type Decode = typeof jsQRModule.default;
+const jsQR: Decode = (jsQRModule as unknown as { default?: Decode }).default ?? (jsQRModule as unknown as Decode);
+
+/** Rasterize the on-screen QR (exactly what the browser drew) and decode it like a phone camera would. */
+async function scanQr(page: Page): Promise<string | undefined> {
+  const size = 400;
+  const px = await page.locator('.qrbox svg.qr').evaluate(async (svg, n) => {
+    const img = new Image();
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg));
+    await img.decode();
+    const c = document.createElement('canvas'); c.width = c.height = n;
+    const g = c.getContext('2d')!; g.imageSmoothingEnabled = false; g.drawImage(img, 0, 0, n, n);
+    return Array.from(g.getImageData(0, 0, n, n).data);
+  }, size);
+  return jsQR(Uint8ClampedArray.from(px), size, size)?.data;
+}
+
+test('the lobby QR code scans to the join link, and a phone that scans it can join', async ({ browser }) => {
+  const { host, code } = await createGame(browser);
+  await expect(host.locator('.qrbox.big svg.qr')).toBeVisible();
+  const url = await scanQr(host);
+  expect(url).toBe(`${new URL(host.url()).origin}/join/${code}`);
+  const phone = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+  phone.on('pageerror', e => pageErrors.push(`phone: ${e.message}`));
+  await phone.goto(url!);
+  await expect(phone.locator('#jcode')).toHaveValue(code);
+  await phone.locator('#jname').fill('Scanner');
+  await phone.getByRole('button', { name: 'Join' }).click();
+  await expect(phone.getByText("You're in, Scanner")).toBeVisible();
+});
+
+test('after the lobby a small QR stays for latecomers and enlarges on tap', async ({ browser }) => {
+  const { host, code } = await createGame(browser);
+  await joinGame(browser, code, 'Early');
+  await host.getByRole('button', { name: /Make teams/ }).click();
+  const small = host.locator('button.qrbox.small');
+  await expect(small).toBeVisible();
+  expect((await small.boundingBox())!.width).toBeLessThan(80);
+  await small.click();
+  await expect(host.locator('button.qrbox.big')).toHaveAttribute('aria-expanded', 'true');
+  expect((await host.locator('button.qrbox.big').boundingBox())!.width).toBeGreaterThan(110);
+  expect(await scanQr(host)).toBe(`${new URL(host.url()).origin}/join/${code}`);
+  await host.locator('button.qrbox.big').click();
+  await expect(host.locator('button.qrbox.small')).toBeVisible();
 });
 
 test('the host link survives a reload and a wrong code gets a clear error', async ({ browser }) => {
