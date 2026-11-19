@@ -81,6 +81,8 @@ let clockSkew = 0,
 let fatal = '';
 const ui = {
   name: '',
+  offlineId: '',
+  newcomerId: '',
   code: route.kind === 'home' ? (route.code ?? '') : '',
   tab: '' as Role | '',
   amt: {} as Record<string, string>,
@@ -388,6 +390,24 @@ ${ui.needPass ? `<label class="f">Host passcode<input id="hpass" type="password"
 }
 
 /* ---------- host ---------- */
+function seatRecovery(v: HostView) {
+  const waiting = v.players.filter(p => p.connected && !p.seated);
+  const offline = v.teams.flatMap(t =>
+    t.members
+      .filter(m => !m.connected)
+      .map(m => ({
+        id: m.id,
+        label: `${m.name} · ${t.name} · ${m.roles.join(', ')}`,
+      })),
+  );
+  if (!waiting.length || !offline.length || v.phase === 'final') return '';
+  const option = (id: string, label: string, selected: string) =>
+    `<option value="${esc(id)}" ${id === selected ? 'selected' : ''}>${esc(label)}</option>`;
+  return `<form class="row" data-form="swapSeat">
+    <label class="f">Offline seat<select required name="offlineId" data-k="offlineId"><option value="">Choose a seat</option>${offline.map(p => option(p.id, p.label, ui.offlineId)).join('')}</select></label>
+    <label class="f">Returning player<select required name="newcomerId" data-k="newcomerId"><option value="">Choose a player</option>${waiting.map(p => option(p.id, `${p.name} · ${p.id.slice(-6)}`, ui.newcomerId)).join('')}</select></label>
+    <button>Restore seat</button></form>`;
+}
 function hostPage(v: HostView): string {
   const joinUrl = `${location.origin}/join/${v.code}`;
   const un = v.players.filter(p => !p.seated);
@@ -409,7 +429,7 @@ function hostPage(v: HostView): string {
 
   const chips = `<div class="chips">${v.players.map(p => `<span class="${p.connected ? '' : 'off'}">${esc(p.name)}${v.phase === 'lobby' || v.phase === 'teams' ? ` <button class="ghost sm" data-act="removePlayer" data-id="${esc(p.id)}" aria-label="Remove ${esc(p.name)}">✕</button>` : ''}</span>`).join('') || '<span class="mut">Nobody yet</span>'}</div>`;
   const bar = `<section class="band hostbar ${v.phase === 'lobby' ? '' : 'compact'}"><div class="wrap stack"><div class="top"><div class="joinwho">${joinQr(v, joinUrl)}<div><span class="sm mut">Scan, or join at ${esc(location.host)} with code</span><div class="joincode">${esc(v.code)}</div></div></div><div class="stack" style="text-align:right"><div class="row" style="justify-content:flex-end"><a class="btnlink ghost sm" href="/screen/${esc(v.code)}" target="_blank" rel="noopener">Open big screen</a><button class="ghost sm" data-act="copy" data-v="${esc(joinUrl)}">Copy join link</button></div><span class="sm mut">Host controls, only you see these</span></div></div>
-${ctl}${un.length && v.phase !== 'lobby' && v.phase !== 'final' ? `<div class="row"><span>${plural(un.length, 'player is', 'players are')} waiting without a team.</span><button class="ghost" data-act="seatLatecomers">Add them to teams</button></div>` : ''}${v.phase === 'lobby' ? chips : ''}</div></section>`;
+${ctl}${un.length && v.phase !== 'lobby' && v.phase !== 'final' ? `<div class="row"><span>${plural(un.length, 'player is', 'players are')} waiting without a team.</span><button class="ghost" data-act="seatLatecomers">Add them to teams</button></div>` : ''}${seatRecovery(v)}${v.phase === 'lobby' ? chips : ''}</div></section>`;
 
   let body = '';
   if (v.phase === 'lobby')
@@ -482,10 +502,12 @@ function playerPage(v: PlayerView): string {
       `<div class="stack"><h2>You're in, ${esc(v.me.name)}</h2><p class="mut">Waiting for the host to make teams. Game code <b>${esc(v.code)}</b>.</p>${rolesExplainer()}${howTo()}</div>`,
     );
   if (!v.team) {
-    if (v.phase === 'results') return band(`<p class="pill">You're watching. The host can add you to a team.</p>${missionReport(v)}`);
+    const recoveryHint = `Returning to your seat? Tell the host your join ID: <b>${esc(v.me.id.slice(-6))}</b>.`;
+    if (v.phase === 'results')
+      return band(`<p class="pill">You're watching. The host can add you to a team. ${recoveryHint}</p>${missionReport(v)}`);
     if (v.phase === 'final') return band(finalReport(v));
     return band(
-      `<div class="stack"><h2>Hang tight, ${esc(v.me.name)}</h2><p class="mut">Teams are already set. Ask the host to add you to one.</p></div>`,
+      `<div class="stack"><h2>Hang tight, ${esc(v.me.name)}</h2><p class="mut">Teams are already set. Ask the host to add you to one. ${recoveryHint}</p></div>`,
     );
   }
   if (v.phase === 'teams') return band(briefing(v));
@@ -638,6 +660,12 @@ document.addEventListener('input', e => {
 document.addEventListener('submit', e => {
   e.preventDefault();
   const f = e.target as HTMLFormElement;
+  if (f.dataset.form === 'swapSeat') {
+    const data = new FormData(f);
+    act({ a: 'swapSeat', offlineId: String(data.get('offlineId')), newcomerId: String(data.get('newcomerId')) });
+    ui.offlineId = '';
+    ui.newcomerId = '';
+  }
   if (f.dataset.form === 'join') {
     const code = ui.code.trim().toUpperCase(),
       name = ui.name.trim();

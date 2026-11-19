@@ -8,7 +8,8 @@ _Last updated 2026-11-19 by Claude. Replace this block when you hand off; don't 
 
 - **Live:** https://elephants-on-mars.fly.dev (deployed from Actions → Deploy to Fly; 1 machine; host passcode enforced). Main is green.
 - **Quality gates are on (#14):** run `npm install` once to get the git hooks. Pre-commit = secret scan + Biome format/lint on staged files; pre-push = typecheck + unit. CI runs `npm run check`. Markdown isn't auto-formatted.
-- **In flight:** Dex → **N14 seat swap** (engine, server, host page). Claude → **L2 accessibility** (player consoles, big screen, CSS, e2e axe checks; stays out of host controls and the server).
+- **N14 merged (#16):** A host can restore an offline seat to a connected, unseated newcomer during briefing, play or results. Match the join ID on the call. The returning tab keeps its login and the previous login expires. Covered by engine, WebSocket and phone-sized browser tests. Rehearse this once during N1.
+- **In flight:** Dex → **N15 practice bots** + his two new ideas. Claude → L2 accessibility (#18), then **Captain "Take back $1"** (engine + Captain console).
 - **Infra audit:** `minimatch` advisory in `/infra` is bundled inside `aws-cdk-lib` (npm overrides can't reach it), deploy-time tooling only. Upgrade CDK once a release includes the upstream fix, then rerun both audits.
 - **Next for Alex:** phone-on-cell-data smoke test on the live URL, then the playtest with `docs/playtest.md`.
 
@@ -17,7 +18,6 @@ _Last updated 2026-11-19 by Claude. Replace this block when you hand off; don't 
 | #   | Item                                                                                                                                                              | Owner | Status |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
 | N1  | Playtest with real people (4–8 players, 2+ missions); write down what felt slow, confusing or unfair                                                              | Alex  | Ready  |
-| N14 | **Seat swap (Dex):** when a player is offline mid-game, the host moves a newcomer into that seat (same team, roles, wallet) from the host page and the empty newcomer entry goes away. Host-approved only, never by matching names. The old token must stop working. Tests: engine, integration, e2e. Update "Dropped player" in `docs/playtest.md`. | Dex | Ready |
 
 ## Next
 
@@ -42,6 +42,7 @@ _Last updated 2026-11-19 by Claude. Replace this block when you hand off; don't 
 
 ## Done
 
+- Seat swap (N14, Dex, #16): host restores an offline seat to a returning player by join ID; old login retired
 - First deploy to Fly (D1) via the one-click workflow; live smoke check passed
 - Launch moment (N8): a rocket lifts off over the shared screen per launch (max 3 at once, "+N more"), fades in place with reduced motion, never replayed on reload
 - N13: default-budget market rehearsals at 2, 25, and 50 teams (#6).

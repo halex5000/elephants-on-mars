@@ -120,7 +120,7 @@ export function hostView(g: Game, now: number, pres: Presence, sh: Shared = shar
       id: t.id,
       name: t.name,
       status: status(g, t.id),
-      members: t.members.map(m => ({ name: name(m.playerId), roles: m.roles, connected: pres.isConnected(m.playerId) })),
+      members: t.members.map(m => ({ id: m.playerId, name: name(m.playerId), roles: m.roles, connected: pres.isConnected(m.playerId) })),
     })),
     fuel: g.phase === 'play' ? fuelMarket(g) : undefined,
   };

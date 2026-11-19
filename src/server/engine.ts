@@ -153,6 +153,20 @@ export function addPlayer(g: Game, id: string, token: string, rawName: string, n
   return p;
 }
 
+// The returning tab keeps its existing login; retiring the old registration revokes its token.
+export function swapSeat(g: Game, offlineId: string, newcomerId: string) {
+  if (!['teams', 'play', 'results'].includes(g.phase)) fail('Seats can only be restored after teams are made and before the game ends.');
+  const old = g.players.find(p => p.id === offlineId);
+  const newcomer = g.players.find(p => p.id === newcomerId);
+  const seat = teamOf(g, offlineId)?.team.members.find(m => m.playerId === offlineId);
+  if (!old || !seat) throw new GameError('Choose a player with a seat.');
+  if (!newcomer || teamOf(g, newcomerId)) throw new GameError('Choose a player who is waiting for a team.');
+  seat.playerId = newcomer.id;
+  newcomer.name = old.name;
+  newcomer.joinedAt = old.joinedAt;
+  g.players = g.players.filter(p => p !== old);
+}
+
 export function removePlayer(g: Game, playerId: string) {
   if (g.phase !== 'lobby' && g.phase !== 'teams') fail('Players can only be removed before the first mission.');
   g.players = g.players.filter(p => p.id !== playerId);
