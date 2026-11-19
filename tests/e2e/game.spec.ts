@@ -258,6 +258,35 @@ test('after the lobby a small QR stays for latecomers and enlarges on tap', asyn
   await expect(host.locator('button.qrbox.small')).toBeVisible();
 });
 
+test('the big screen opens from the host page: no controls, follows the game live, scannable', async ({ browser }) => {
+  const { host, code } = await createGame(browser);
+  const [screen] = await Promise.all([host.context().waitForEvent('page'), host.getByRole('link', { name: 'Open big screen' }).click()]);
+  screen.on('pageerror', e => pageErrors.push(`screen: ${e.message}`));
+  await expect(screen).toHaveURL(new RegExp(`/screen/${code}$`));
+  await expect(screen.locator('.joincode')).toHaveText(code);
+  expect(await scanQr(screen)).toBe(`${new URL(host.url()).origin}/join/${code}`);
+  await expect(screen.locator('header.mast')).toBeHidden();
+  await joinGame(browser, code, 'Projected');
+  await expect(screen.locator('.chips')).toContainText('Projected');
+  await host.getByRole('button', { name: /Make teams/ }).click();
+  await expect(screen.getByRole('heading', { name: 'Teams' })).toBeVisible();
+  await host.getByRole('button', { name: 'Start mission 1' }).click();
+  await expect(screen.locator('.bs-clock .tmr')).toHaveText(/\d:\d\d/);
+  await expect(screen.locator('.screen-join .code')).toHaveText(code);
+  expect(await screen.locator('button, input, select, textarea, [data-act]').count()).toBe(0);
+  await screen.reload();
+  await expect(screen.locator('.bs-clock')).toBeVisible();
+});
+
+test('a big-screen link opened outside the host browser goes to the join form', async ({ browser }) => {
+  const { code } = await createGame(browser);
+  const stranger = await (await browser.newContext()).newPage();
+  await stranger.goto(`/screen/${code}`);
+  await expect(stranger).toHaveURL(/\/$/);
+  await expect(stranger.locator('#jcode')).toHaveValue(code);
+  await expect(stranger.getByText(/big screen opens from the host's browser/)).toBeVisible();
+});
+
 test('the host link survives a reload and a wrong code gets a clear error', async ({ browser }) => {
   const { host, code } = await createGame(browser);
   await host.reload();

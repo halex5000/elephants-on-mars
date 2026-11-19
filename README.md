@@ -176,6 +176,7 @@ Sourced from the original's "How it works" video and its gameplay footage where 
 - **Fairness:** a purchase is refused if the price jumped or the pool was emptied since the player looked, so nobody pays a surprise price.
 - **Launch:** succeeds if the animal fits the rocket and the rocket has at least the fuel it needs. Anything bought but not launched by the end of a mission is lost.
 - **Scoring:** a landed animal scores its points. Every team's points together terraform Mars (shown after each mission, and on the shared screen's planet).
+- **Big screen:** the host page has **Open big screen** (`/screen/CODE`): the same live picture without any controls, for screen-sharing or a projector. It only opens in the host's browser (it uses the host's saved token), shows a big QR in the lobby and a small "Late? Join" QR during play.
 - **Shared screen:** the host view shows the timer, a live feed of every purchase and launch, the fuel pool, % launched, $ distributed and $ spent, and each team's status.
 - *Not implemented:* the original Captain screen has a "Restart" button; what it does isn't shown.
 

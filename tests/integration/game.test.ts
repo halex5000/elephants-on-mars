@@ -128,6 +128,27 @@ describe('auth and abuse', () => {
     closeAll(h, x);
   });
 
+  test('big screen: needs the host token, sees the host picture, can never act', async () => {
+    const h = await host(app.url);
+    const code = h.creds!.code;
+    const p = await join(app.url, code, 'Pat');
+    const bad = new Client(app.url); await bad.opened;
+    bad.send({ t: 'screen', code, hostToken: 'nope' });
+    await bad.until(() => bad.errors.length === 1, 2000, 'bad screen rejected');
+    assert.equal(bad.view, null);
+    const s = new Client(app.url); await s.opened;
+    s.send({ t: 'screen', code, hostToken: h.creds!.hostToken! });
+    await s.until(() => s.view?.kind === 'host' && s.hv.players.length === 1, 2000, 'screen view');
+    for (const action of [{ a: 'makeTeams' }, { a: 'startRound' }, { a: 'removePlayer', playerId: p.creds!.playerId! }, { a: 'newGame' }] as const) s.act(action as never);
+    await s.until(() => s.errors.length === 4, 2000, 'screen actions rejected');
+    assert.ok(s.errors.every(e => /Only the host|Join the game/.test(e)), s.errors.join(' | '));
+    assert.equal(app.games.get(code)!.phase, 'lobby');
+    assert.equal(app.games.get(code)!.players.length, 1);
+    h.act({ a: 'makeTeams' });
+    await s.until(() => s.hv.phase === 'teams', 2000, 'screen follows the host');
+    closeAll(h, p, bad, s);
+  });
+
   test('players cannot use host actions; unjoined sockets cannot act', async () => {
     const { h, players } = await lobby(1);
     const p = players[0]!;

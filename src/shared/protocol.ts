@@ -31,6 +31,8 @@ export type Action =
 export type ClientMsg =
   | { t: 'create'; settings?: Partial<Settings>; passcode?: string }
   | { t: 'host'; code: string; hostToken: string }
+  /** Read-only projector view: the host's screen without controls. Needs the host token. */
+  | { t: 'screen'; code: string; hostToken: string }
   | { t: 'join'; code: string; name: string }
   | { t: 'resume'; code: string; playerId: string; token: string }
   | { t: 'act'; action: Action }

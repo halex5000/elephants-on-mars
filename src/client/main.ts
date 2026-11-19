@@ -28,7 +28,7 @@ const store = {
 };
 
 /* ---------- state ---------- */
-type Route = { kind: 'home'; code?: string } | { kind: 'host'; code: string } | { kind: 'play'; code: string };
+type Route = { kind: 'home'; code?: string } | { kind: 'host'; code: string } | { kind: 'screen'; code: string } | { kind: 'play'; code: string };
 let route: Route = parseRoute();
 let view: HostView | PlayerView | null = null;
 let clockSkew = 0, speed = 1, viewAt = 0, viewServerNow = 0;
@@ -46,12 +46,13 @@ function parseRoute(): Route {
   const [, a, b] = location.pathname.split('/');
   if (a === 'host' && b) return { kind: 'host', code: b.toUpperCase() };
   if (a === 'play' && b) return { kind: 'play', code: b.toUpperCase() };
+  if (a === 'screen' && b) return { kind: 'screen', code: b.toUpperCase() };
   if (a === 'join' && b) return { kind: 'home', code: b.toUpperCase() };
   return { kind: 'home', code: new URLSearchParams(location.search).get('code')?.toUpperCase() ?? undefined };
 }
 function go(r: Route) {
   route = r;
-  const path = r.kind === 'host' ? `/host/${r.code}` : r.kind === 'play' ? `/play/${r.code}` : '/';
+  const path = r.kind === 'home' ? '/' : `/${r.kind}/${r.code}`;
   history.replaceState(null, '', path);
 }
 
@@ -59,6 +60,7 @@ function go(r: Route) {
 let ws: WebSocket | null = null, retry = 0, pending: ClientMsg | null = null;
 function hello(): ClientMsg | null {
   if (route.kind === 'host') { const tok = store.get(`eom-host-${route.code}`); return tok ? { t: 'host', code: route.code, hostToken: tok } : null; }
+  if (route.kind === 'screen') { const tok = store.get(`eom-host-${route.code}`); return tok ? { t: 'screen', code: route.code, hostToken: tok } : null; }
   if (route.kind === 'play') { const p = store.get(`eom-player-${route.code}`, true); return p ? { t: 'resume', code: route.code, playerId: p.playerId, token: p.token } : null; }
   return null;
 }
@@ -143,6 +145,7 @@ function render() {
   const next = document.createElement('main');
   next.id = 'app';
   next.innerHTML = page();
+  document.body.classList.toggle('projector', route.kind === 'screen');
   morphdom($('#app')!, next, {
     onBeforeElUpdated(from, to) {
       // a <details> someone opened or closed stays that way across server updates
@@ -168,7 +171,7 @@ const band = (inner: string, cls = '') => `<section class="band ${cls}"><div cla
 function page(): string {
   if (route.kind === 'home') return home();
   if (!view) return band(`<p class="mut">Connecting to mission control…</p>`);
-  if (view.kind === 'host') return hostPage(view);
+  if (view.kind === 'host') return route.kind === 'screen' ? screenPage(view) : hostPage(view);
   return playerPage(view);
 }
 
@@ -222,7 +225,7 @@ function hostPage(v: HostView): string {
   } else ctl = `<div class="row"><button data-act="newGame">New game with the same players</button><a class="pill" href="/">Back to start</a></div>`;
 
   const chips = `<div class="chips">${v.players.map(p => `<span class="${p.connected ? '' : 'off'}">${esc(p.name)}${v.phase === 'lobby' || v.phase === 'teams' ? ` <button class="ghost sm" data-act="removePlayer" data-id="${esc(p.id)}" aria-label="Remove ${esc(p.name)}">✕</button>` : ''}</span>`).join('') || '<span class="mut">Nobody yet</span>'}</div>`;
-  const bar = `<section class="band hostbar ${v.phase === 'lobby' ? '' : 'compact'}"><div class="wrap stack"><div class="top"><div class="joinwho">${joinQr(v, joinUrl)}<div><span class="sm mut">Scan, or join at ${esc(location.host)} with code</span><div class="joincode">${esc(v.code)}</div></div></div><div class="stack" style="text-align:right"><button class="ghost sm" data-act="copy" data-v="${esc(joinUrl)}">Copy join link</button><span class="sm mut">Host controls, only you see these</span></div></div>
+  const bar = `<section class="band hostbar ${v.phase === 'lobby' ? '' : 'compact'}"><div class="wrap stack"><div class="top"><div class="joinwho">${joinQr(v, joinUrl)}<div><span class="sm mut">Scan, or join at ${esc(location.host)} with code</span><div class="joincode">${esc(v.code)}</div></div></div><div class="stack" style="text-align:right"><div class="row" style="justify-content:flex-end"><a class="btnlink ghost sm" href="/screen/${esc(v.code)}" target="_blank" rel="noopener">Open big screen</a><button class="ghost sm" data-act="copy" data-v="${esc(joinUrl)}">Copy join link</button></div><span class="sm mut">Host controls, only you see these</span></div></div>
 ${ctl}${un.length && v.phase !== 'lobby' && v.phase !== 'final' ? `<div class="row"><span>${plural(un.length, 'player is', 'players are')} waiting without a team.</span><button class="ghost" data-act="seatLatecomers">Add them to teams</button></div>` : ''}${v.phase === 'lobby' ? chips : ''}</div></section>`;
 
   let body = '';
@@ -238,6 +241,23 @@ function joinQr(v: HostView, joinUrl: string) {
   const code = qr(joinUrl, `QR code to join game ${v.code}`);
   if (v.phase === 'lobby') return `<div class="qrbox big">${code}</div>`;
   return `<button class="qrbox ${ui.qrBig ? 'big' : 'small'}" data-act="qr" aria-expanded="${ui.qrBig}" aria-label="${ui.qrBig ? 'Shrink' : 'Enlarge'} the join QR code">${code}</button>`;
+}
+/** The projector: what the host screen-shares. Same live data as the host, no controls. */
+function screenPage(v: HostView): string {
+  const joinUrl = `${location.origin}/join/${v.code}`;
+  if (v.phase === 'lobby') {
+    return band(`<div class="screen-lobby"><div class="qrbox screen-qr">${qr(joinUrl, `QR code to join game ${v.code}`)}</div>
+<div class="stack"><h1>Elephants on Mars</h1><p class="mut m0">Scan the code, or go to <b>${esc(location.host)}</b> and enter</p><div class="joincode">${esc(v.code)}</div>
+<p class="m0"><b class="num">${v.players.length}</b> <span class="mut">${v.players.length === 1 ? 'player' : 'players'} in</span></p>
+<div class="chips">${v.players.map(p => `<span>${esc(p.name)}</span>`).join('')}</div></div></div>`, 'projector');
+  }
+  const corner = v.phase === 'final' ? '' : `<div class="screen-join"><span class="sm mut">Late? Join with</span><b class="code">${esc(v.code)}</b><div class="qrbox mini">${qr(joinUrl, `QR code to join game ${v.code}`)}</div></div>`;
+  let body = '';
+  if (v.phase === 'teams') body = `<h2>Teams</h2><p class="mut">Find your team, then head to your breakout room.</p>${teamCards(v)}`;
+  else if (v.phase === 'play') body = bigScreen(v);
+  else if (v.phase === 'results') body = missionReport(v);
+  else body = finalReport(v, true);
+  return band(`${corner}${body}`, 'projector');
 }
 function teamCards(v: HostView) {
   const names = v.teams.map(t => t.name);
@@ -344,15 +364,15 @@ function terraBar(v: Common) {
   const t = v.terraform;
   return `<div class="terra"><b>Mars is ${t.pct}% terraformed</b><div class="bar"><i style="width:${t.pct}%"></i></div><p class="sm m0" style="margin-top:6px;color:#ffd9c7">${t.species.length} of ${t.speciesTotal} species living there ${t.species.map(s => s.emoji).join(' ')}</p></div>`;
 }
-function finalReport(v: HostView | PlayerView) {
+function finalReport(v: HostView | PlayerView, projector = false) {
   const f = v.final; if (!f) return '';
   const mine = v.kind === 'player' ? v.team?.id : undefined;
   return `<div class="report"><div class="report-in"><div class="title"><small>Final</small><h2>Mission report</h2><p>Notable contributions to biodiversity on Mars</p>
 <p class="m0" style="margin-top:14px;font-size:20px"><b id="winner">${f.winner ? `${esc(f.winner)} wins with ${f.topPoints} points` : 'Mars is still waiting'}</b></p>${terraBar(v)}
 ${f.failed || f.scrubbed ? `<p class="sm m0" style="margin-top:8px;color:#ffd9c7">${[f.failed ? `${plural(f.failed, "rocket didn't", "rockets didn't")} make it` : '', f.scrubbed ? `${plural(f.scrubbed, 'mission', 'missions')} never launched` : ''].filter(Boolean).join(', and ')}.</p>` : ''}</div>
 <div class="lb">${f.byRound.map((t, i) => `<div class="r ${t.team === mine ? 'me' : ''}"><span class="rank">${i + 1}</span><span class="name">${esc(t.name)}</span><span class="zoo">${t.landed.map(a => a.emoji).join('')}</span><span class="num pts">${t.total}</span></div>`).join('')}</div></div></div>
-<div class="share row"><button data-act="copyResults">Copy results</button><span class="sm mut">Paste them in the meeting chat for the debrief.</span></div>
-<details class="panel share-text" ${ui.showResults ? 'open' : ''}><summary>Show results as text</summary><textarea id="results-text" readonly rows="12" aria-label="Results as text">${esc(resultsText(v))}</textarea></details>
+${projector ? '' : `<div class="share row"><button data-act="copyResults">Copy results</button><span class="sm mut">Paste them in the meeting chat for the debrief.</span></div>
+<details class="panel share-text" ${ui.showResults ? 'open' : ''}><summary>Show results as text</summary><textarea id="results-text" readonly rows="12" aria-label="Results as text">${esc(resultsText(v))}</textarea></details>`}
 <div class="final-grid"><div class="panel debrief"><h3>Debrief questions</h3><ol><li>Which role felt the most in the dark? What did you wish someone had told you sooner?</li><li>When did your team's communication start to click, and what changed?</li><li>How did the shared markets change your plans? Did you wait for a better deal or buy fast?</li><li>Did anyone sit on money or information? Why?</li><li>What's one habit from this game you'd bring to a real project?</li></ol></div><div>${planet(v.terraform.pct)}</div></div>`;
 }
 
@@ -423,7 +443,7 @@ window.addEventListener('popstate', () => { route = parseRoute(); render(); });
 // private window) used to hang on "Connecting…" forever. Send people to the join form instead.
 if (route.kind !== 'home' && !hello()) {
   const code = route.code;
-  fatal = route.kind === 'host' ? 'That host link only works in the browser that created the game. You can join as a player here.' : "This browser isn't in that game yet. Enter your name to join.";
+  fatal = route.kind === 'screen' ? "The big screen opens from the host's browser. Use the Open big screen button on the host page." : route.kind === 'host' ? 'That host link only works in the browser that created the game. You can join as a player here.' : "This browser isn't in that game yet. Enter your name to join.";
   go({ kind: 'home', code }); ui.code = code;
 }
 render();

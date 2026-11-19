@@ -21,7 +21,7 @@ export interface ServerOptions {
   stateFile?: string; snapshotIntervalMs?: number;
 }
 
-interface Conn { ws: WebSocket; code?: string; role?: 'host' | 'player'; playerId?: string; hits: number[]; alive: boolean; last?: string }
+interface Conn { ws: WebSocket; code?: string; role?: 'host' | 'screen' | 'player'; playerId?: string; hits: number[]; alive: boolean; last?: string }
 
 const MIME: Record<string, string> = { '.woff2': 'font/woff2', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.map': 'application/json' };
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ'; // no I, L, O
@@ -111,7 +111,7 @@ export async function startServer(opts: ServerOptions): Promise<{ server: Server
       // serverNow is the only field that changes every time; compare without it so
       // nobody is sent a view identical to the last one they got.
       let json: string;
-      if (c.role === 'host') json = hostJson ??= JSON.stringify({ t: 'view', view: { ...hostView(g, t, { isConnected: id => online.has(id) }, sh), serverNow: -1 } });
+      if (c.role === 'host' || c.role === 'screen') json = hostJson ??= JSON.stringify({ t: 'view', view: { ...hostView(g, t, { isConnected: id => online.has(id) }, sh), serverNow: -1 } });
       else if (c.playerId) json = JSON.stringify({ t: 'view', view: { ...playerView(g, c.playerId, t, sh), serverNow: -1 } });
       else continue;
       if (json === c.last) continue;
@@ -195,6 +195,14 @@ export async function startServer(opts: ServerOptions): Promise<{ server: Server
         const g = games.get(String(msg.code).toUpperCase());
         if (!g || !safeEq(String(msg.hostToken), g.hostToken)) { send(c, { t: 'error', message: "That host link isn't valid any more.", fatal: true }); return; }
         Object.assign(c, { code: g.code, role: 'host', playerId: undefined, last: undefined });
+        broadcast(g);
+        return;
+      }
+      case 'screen': {
+        // Same picture as the host, no controls: act() only lets role 'host' run host actions.
+        const g = games.get(String(msg.code).toUpperCase());
+        if (!g || !safeEq(String(msg.hostToken), g.hostToken)) { send(c, { t: 'error', message: 'Open the big screen from the host\'s browser.', fatal: true }); return; }
+        Object.assign(c, { code: g.code, role: 'screen', playerId: undefined, last: undefined });
         broadcast(g);
         return;
       }
