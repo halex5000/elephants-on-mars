@@ -16,7 +16,7 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 
 | # | Item | Owner | Status |
 |---|---|---|---|
-| D1 | First Fly.io deploy (steps in README) and a smoke test from a phone on cell data | Alex | Ready |
+| D1 | First Fly.io deploy (steps in README) and a smoke test from a phone on cell data. Then add the `FLY_API_TOKEN` secret so later deploys are one click from Actions | Alex | Ready |
 | N1 | Playtest with real people (4–8 players, 2+ missions); write down what felt slow, confusing or unfair | Alex | Ready |
 
 ## Next
