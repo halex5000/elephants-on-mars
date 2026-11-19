@@ -176,6 +176,7 @@ function onMsg(m: ServerMsg) {
       break;
     case 'view':
       spotLaunches(m.view);
+      if (view?.phase === 'play' && m.view.phase === 'results' && view.code === m.view.code) announce('Mission over. Results are in.');
       view = m.view;
       clockSkew = m.view.serverNow - Date.now();
       speed = m.view.speed || 1;
@@ -292,9 +293,32 @@ function tickMarkets() {
   });
 }
 setInterval(tickMarkets, 250);
+/** Screen readers hear the clock at a few moments, never every second. */
+const MILESTONES: [number, string][] = [
+  [60, '1 minute left'],
+  [30, '30 seconds left'],
+  [10, '10 seconds left'],
+];
+let spokenKey = '';
+function announce(text: string) {
+  const el = $('#announce');
+  if (!el) return;
+  el.textContent = '';
+  setTimeout(() => (el.textContent = text), 50); // clear first so a repeat is read again
+}
+function announceClock(s: number) {
+  if (view?.phase !== 'play' || !view.endsAt) return;
+  const hit = MILESTONES.find(([at]) => s <= at && s > at - 5);
+  if (!hit) return;
+  const key = `${view.code}|${view.round}|${hit[0]}`;
+  if (key === spokenKey) return;
+  spokenKey = key;
+  announce(hit[1]);
+}
 function tick() {
   tickMarkets();
   const s = secsLeft();
+  announceClock(s);
   document.querySelectorAll('.tmr').forEach(el => {
     el.textContent = s > 0 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : "Time's up";
     el.classList.toggle('hot', s > 0 && s <= 30);
@@ -478,7 +502,8 @@ function teamCards(v: HostView) {
 function bigScreen(v: HostView) {
   const names = v.teams.map(t => t.name);
   const progress = v.stats.teams ? Math.round((v.stats.launched / v.stats.teams) * 100) : 0;
-  const mini = (ok: boolean, icon: string, label: string) => `<span class="${ok ? 'ok' : ''}" title="${label}">${icon}</span>`;
+  const mini = (ok: boolean, icon: string, label: string) =>
+    `<span class="${ok ? 'ok' : ''}" role="img" title="${label}" aria-label="${label}: ${ok ? 'done' : 'not yet'}">${icon}</span>`;
   return `<div class="bigscreen">${planet(v.terraform.pct)}
 <div class="bs-grid"><div><div class="bs-clock"><span class="num tmr"></span><small class="mut"> until close</small></div>
 ${v.fuel ? `<div class="bs-pool"><span class="num" ${poolAttrs(v.fuel)}>0</span><span class="sm">fuel in the shared pool</span></div>` : ''}
@@ -539,11 +564,11 @@ function deck(v: PlayerView) {
 <div class="console r-${tab}" data-role="${tab}">
 <div class="c-head"><span class="c-team">${esc(t.name)}</span><h1 class="c-title">${RI[tab].t.toUpperCase()}</h1><button class="c-help ghost sm" data-act="help" aria-label="What does the ${RI[tab].t} do?">?</button></div>
 ${ui.help ? `<p class="sm" style="margin:10px 4px 0">${RI[tab].d}</p>` : ''}
-<div class="c-stats"><div><span class="num tmr"></span><small>until close</small></div><i></i><div class="task">${TASK[tab]}</div><i></i><div><span class="num cash">$${wallet}</span><small>you have</small></div></div>
-${t.roles.length > 1 ? `<div class="tabs">${t.roles.map(r => `<button data-act="tab" data-r="${r}" class="${r === tab ? 'on' : ''}">${RI[r].t}</button>`).join('')}</div>` : ''}
+<div class="c-stats"><div><span class="num tmr" role="timer" aria-label="Time left"></span><small>until close</small></div><i></i><div class="task">${TASK[tab]}</div><i></i><div><span class="num cash">$${wallet}</span><small>you have</small></div></div>
+${t.roles.length > 1 ? `<div class="tabs">${t.roles.map(r => `<button data-act="tab" data-r="${r}" class="${r === tab ? 'on' : ''}" aria-pressed="${r === tab}">${RI[r].t}</button>`).join('')}</div>` : ''}
 ${body}
 ${t.status.launched ? '<p class="locked pill">Launched. Results come when the mission closes.</p>' : secsLeft() <= 0 ? `<p class="locked pill bad">Time's up</p>` : ''}
-<div class="status"><small>Mission status</small><div class="dots"><span class="dot ${t.status.animal ? 'ok' : ''}" title="Animal">${t.status.animal ? animalIcon : paw()}</span><span class="dot ${t.status.rocket ? 'ok' : ''}" title="Rocket">${rocketGlyph()}</span><span class="dot ${t.status.fuel ? 'ok' : ''}" title="Fuel">${drop()}</span></div></div>
+<div class="status"><small>Mission status</small><div class="dots">${statusDot(t.status.animal, 'Animal', 'on board', t.status.animal ? animalIcon : paw())}${statusDot(t.status.rocket, 'Rocket', 'bought', rocketGlyph())}${statusDot(t.status.fuel, 'Fuel', 'enough loaded', drop())}</div></div>
 </div>
 <div class="side">${crewPanel(v)}<div class="panel"><h3>Live feed</h3><div class="feed" style="margin-top:8px">${
     v.feed.length
@@ -555,6 +580,9 @@ ${t.status.launched ? '<p class="locked pill">Launched. Results come when the mi
   }</div></div></div>
 </div>`;
 }
+/** A status light that says what it means, not just how it looks. */
+const statusDot = (ok: boolean, what: string, done: string, icon: string) =>
+  `<span class="dot ${ok ? 'ok' : ''}" role="img" title="${what}" aria-label="${what}: ${ok ? done : 'not yet'}">${icon}</span>`;
 function crewPanel(v: PlayerView) {
   const t = v.team!;
   return `<div class="panel"><h3>Your crew</h3><div class="crew" style="margin-top:6px">${t.roster.map(r => `<div style="--c:var(--${r.role})"><span class="who"><span class="sw"></span><span><b>${RI[r.role].t}</b><br><span class="sm mut">${esc(r.names.join(', ') || '—')}${t.roles.includes(r.role) ? ' (you)' : ''}</span></span></span><b class="num" style="font-size:22px">$${r.balance}</b></div>`).join('')}</div></div>`;
@@ -565,7 +593,7 @@ function capBody(v: PlayerView, lock: boolean) {
     ready = c.picks.animal && c.picks.rocket && c.picks.fuel,
     conf = Date.now() - ui.confirm < 4000;
   const capWallet = t.roster.find(r => r.role === 'captain')!.balance;
-  return `<div class="stack">${(['vet', 'engineer', 'pilot'] as Role[]).map(r => `<div class="give" style="--c:var(--${r})"><b>${RI[r].t}</b><span class="wallet" data-wallet-of="${r}">$${t.roster.find(x => x.role === r)!.balance}</span><button data-act="give" data-to="${r}" ${capWallet < 1 || v.phase !== 'play' ? 'disabled' : ''}>Give $1</button></div>`).join('')}</div>
+  return `<div class="stack">${(['vet', 'engineer', 'pilot'] as Role[]).map(r => `<div class="give" style="--c:var(--${r})"><b>${RI[r].t}</b><span class="wallet" data-wallet-of="${r}">$${t.roster.find(x => x.role === r)!.balance}</span><button data-act="give" data-to="${r}" ${capWallet < 1 || v.phase !== 'play' ? 'disabled' : ''}>Give $1<span class="sr-only"> to the ${RI[r].t}</span></button></div>`).join('')}</div>
 <p class="sm mut" style="margin:12px 4px 0">You can't see sizes or fuel needs. On board so far: ${c.picks.animal ? esc(c.picks.animal) : 'no animal'}, ${c.picks.rocket ? `the ${esc(c.picks.rocket)}` : 'no rocket'}, ${c.picks.fuel ? `${c.picks.fuel} fuel` : 'no fuel'}. Ask your crew if it's enough.</p>
 <div class="launchbar"><button class="launch ${conf ? 'confirm' : ''}" data-act="launch" ${!ready || lock ? 'disabled' : ''}>${t.status.launched ? 'Launched' : conf ? 'Tap again to launch' : 'Launch'}</button></div>
 <p class="sm mut m0" style="margin-top:8px;text-align:center">Unspent money carries over. You get $${v.settings.income} more each mission.</p>`;
@@ -574,10 +602,10 @@ const auctionAttrs = (base: number, reset: number) => `data-auction data-base="$
 const liveNow = (base: number, reset: number) => auctionPrice(base, reset, serverNow());
 function vetBody(v: PlayerView, lock: boolean, wallet: number) {
   const c = v.console!.vet!;
-  return `<div class="items">${c.animals
+  return `<div class="items" tabindex="0" role="region" aria-label="Animals for sale">${c.animals
     .map(a => {
       const on = c.bought === a.id;
-      return `<div class="item ${on ? 'on' : ''}" data-animal="${a.id}"><div><b>${esc(a.name)}</b><div class="buy"><span class="price" ${auctionAttrs(a.base, a.resetAt)}>$${liveNow(a.base, a.resetAt)}</span><button data-act="buyAnimal" data-id="${a.id}" ${auctionAttrs(a.base, a.resetAt)} data-wallet="${wallet}" data-locked="${lock ? 1 : 0}">${on ? 'Taken' : 'Take'}</button></div></div>
+      return `<div class="item ${on ? 'on' : ''}" data-animal="${a.id}"><div><b>${esc(a.name)}</b><span class="sr-only">, size ${a.size}, ${a.points} points, price</span><div class="buy"><span class="price" ${auctionAttrs(a.base, a.resetAt)}>$${liveNow(a.base, a.resetAt)}</span><button data-act="buyAnimal" data-id="${a.id}" ${auctionAttrs(a.base, a.resetAt)} data-wallet="${wallet}" data-locked="${lock ? 1 : 0}">${on ? 'Taken' : 'Take'}<span class="sr-only"> ${esc(a.name)}</span></button></div></div>
 <div class="medal" aria-hidden="true">${a.emoji}<span class="badge size tl" title="Size">${a.size}</span><span class="badge br" title="Points">★${a.points}</span></div></div>`;
     })
     .join('')}</div>
@@ -585,10 +613,10 @@ function vetBody(v: PlayerView, lock: boolean, wallet: number) {
 }
 function pilotBody(v: PlayerView, lock: boolean, wallet: number) {
   const c = v.console!.pilot!;
-  return `<div class="items">${c.rockets
+  return `<div class="items" tabindex="0" role="region" aria-label="Rockets for sale">${c.rockets
     .map(k => {
       const on = c.bought === k.id;
-      return `<div class="item ${on ? 'on' : ''}" data-rocket="${k.id}"><div><b>${esc(k.name)}</b><div class="buy"><span class="price" ${auctionAttrs(k.base, k.resetAt)}>$${liveNow(k.base, k.resetAt)}</span><button data-act="buyRocket" data-id="${k.id}" ${auctionAttrs(k.base, k.resetAt)} data-wallet="${wallet}" data-locked="${lock ? 1 : 0}">${on ? 'Bought' : 'Buy'}</button></div></div>
+      return `<div class="item ${on ? 'on' : ''}" data-rocket="${k.id}"><div><b>${esc(k.name)}</b><span class="sr-only">, size ${k.size}, needs ${k.fuel} fuel, price</span><div class="buy"><span class="price" ${auctionAttrs(k.base, k.resetAt)}>$${liveNow(k.base, k.resetAt)}</span><button data-act="buyRocket" data-id="${k.id}" ${auctionAttrs(k.base, k.resetAt)} data-wallet="${wallet}" data-locked="${lock ? 1 : 0}">${on ? 'Bought' : 'Buy'}<span class="sr-only"> ${esc(k.name)}</span></button></div></div>
 <div class="medal" aria-hidden="true">${rocket(k.size)}<span class="badge size tl" title="Size">${k.size}</span><span class="badge br" title="Fuel needed">${k.fuel}</span></div></div>`;
     })
     .join('')}</div>
@@ -744,6 +772,7 @@ document.addEventListener('click', e => {
     }
     case 'launch':
       if (Date.now() - ui.confirm > 4000) {
+        announce('Press Launch again within 4 seconds to confirm.');
         ui.confirm = Date.now();
         render();
         setTimeout(render, 4100);
