@@ -14,7 +14,8 @@
       "!**/test-results",
       "!**/playwright-report",
       "!**/package-lock.json",
-      "!**/*.csv"
+      "!**/*.csv",
+      "!**/*.md"
     ]
   },
   "formatter": {
