@@ -12,6 +12,7 @@ _Last updated 2026-11-19 by Dex. Replace this block when you hand off; don't pre
 - **In flight:** Dex → **N15 practice bots** ready for review alongside N16 (Mars postcard, #20) and N17 (Mission Control receipts, #19). Rehearse one human and three Scouts during N1. Claude → L2 accessibility (#18), then **Captain "Take back $1"** (engine + Captain console).
 - **Crew wallets (Dex, in review):** Vet, Pilot and Engineer can return one unspent dollar to their Captain during a mission. Try a return from a phone during N1.
 - **Infra audit:** `minimatch` advisory in `/infra` is bundled inside `aws-cdk-lib` (npm overrides can't reach it), deploy-time tooling only. Upgrade CDK once a release includes the upstream fix, then rerun both audits.
+- **N11 projector (Dex, in review):** Above ten teams, the projector shows the launch count and ten leading crews, with the rest of the standings available on demand. Check readability from the back of the room at N1.
 - **Next for Alex:** phone-on-cell-data smoke test on the live URL, then the playtest with `docs/playtest.md`.
 
 ## Now

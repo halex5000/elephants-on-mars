@@ -359,6 +359,38 @@ test('after the lobby a small QR stays for latecomers and enlarges on tap', asyn
   await expect(host.locator('button.qrbox.small')).toBeVisible();
 });
 
+test('50-team projector follows launches and ranks ten crews while the host keeps all teams', async ({ browser, baseURL }) => {
+  const { host, code } = await createGame(browser);
+  const clients: Client[] = [];
+  try {
+    await host.locator('#s-size').fill('1');
+    for (let i = 0; i < 5; i++)
+      clients.push(
+        ...(await Promise.all(Array.from({ length: 10 }, (_, j) => botJoin(baseURL!, code, `Crew ${i * 10 + j}`, undefined, false)))),
+      );
+    await host.getByRole('button', { name: /Make teams/ }).click();
+    const [screen] = await Promise.all([host.context().waitForEvent('page'), host.getByRole('link', { name: 'Open big screen' }).click()]);
+    await host.getByRole('button', { name: 'Start mission 1' }).click();
+    await expect(screen.getByText('0 of 50 launched', { exact: true })).toBeVisible();
+    await expect(host.locator('.bs-team')).toHaveCount(50);
+    await expect(screen.locator('.bs-team')).toHaveCount(0);
+    await expect(screen.locator('.projected-ranking li:visible')).toHaveCount(10);
+    await launchSolo(clients[0]!);
+    await expect(screen.getByText('1 of 50 launched', { exact: true })).toBeVisible();
+    await host.getByRole('button', { name: 'End mission now' }).click();
+    await expect(screen.locator('.projected-ranking li:visible')).toHaveCount(10);
+    await expect(screen.locator('.projected-ranking li').first()).toContainText(clients[0]!.pv.team!.name);
+    await expect(screen.locator('.projected-ranking .rank').nth(2)).toHaveText('2');
+    await screen.getByText('Show remaining 40 teams').click();
+    await expect(screen.locator('.projected-ranking li:visible')).toHaveCount(50);
+    await host.getByRole('button', { name: 'End game early' }).click();
+    await expect(screen.locator('#winner')).toBeVisible();
+    await expect(screen.locator('.projected-ranking li:visible')).toHaveCount(10);
+  } finally {
+    for (const c of clients) c.close();
+  }
+});
+
 test('the big screen opens from the host page: no controls, follows the game live, scannable', async ({ browser }) => {
   const { host, code } = await createGame(browser);
   const [screen] = await Promise.all([host.context().waitForEvent('page'), host.getByRole('link', { name: 'Open big screen' }).click()]);
