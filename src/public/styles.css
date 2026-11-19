@@ -1,0 +1,224 @@
+/* Elephants on Mars — mission console
+   Night-sky base, glass panels, one accent per role (Captain brass, Vet bio-green,
+   Pilot sky blue, Engineer fuel red). The memorable element is the shared screen's
+   Mars, which greens as the group terraforms it. Original art; inspired by, not
+   copied from, the game this is an homage to. */
+@font-face{font-family:"Saira Condensed";font-style:normal;font-weight:700;font-display:swap;src:url(/fonts/saira-condensed-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Saira Condensed";font-style:normal;font-weight:800;font-display:swap;src:url(/fonts/saira-condensed-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:"Nunito Sans";font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/nunito-sans-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Nunito Sans";font-style:normal;font-weight:700;font-display:swap;src:url(/fonts/nunito-sans-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Nunito Sans";font-style:normal;font-weight:800;font-display:swap;src:url(/fonts/nunito-sans-latin-800-normal.woff2) format("woff2")}
+:root{
+  --sky:#070a1a;--sky2:#0e1430;--ink:#f4f1ff;--mut:#a9a6c8;--line:rgba(255,255,255,.12);
+  --glass:rgba(255,255,255,.06);--glass2:rgba(255,255,255,.1);
+  --mars:#c4552f;--mars2:#7a2e1b;--terra:#5fd38a;--sea:#3f8fd6;
+  --captain:#f5b83d;--vet:#39d98a;--pilot:#43a6ff;--engineer:#ff5b4d;
+  --accent:#8f8cff;--bad:#ff6b6b;--good:#5fd38a;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;min-width:0}
+html{background:var(--sky)}
+body{margin:0;min-height:100vh;color:var(--ink);font:16px/1.5 "Nunito Sans",system-ui,sans-serif;overflow-x:clip;
+  background:radial-gradient(1200px 600px at 80% -10%,#1b1f4d 0%,transparent 60%),radial-gradient(900px 500px at -10% 110%,#2a1030 0%,transparent 55%),var(--sky)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.55;z-index:0;
+  background-image:radial-gradient(1px 1px at 12% 18%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 72% 12%,#fff 50%,transparent 51%),radial-gradient(1.5px 1.5px at 40% 70%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 88% 64%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 22% 86%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 55% 35%,#fff 50%,transparent 51%),radial-gradient(1.5px 1.5px at 93% 30%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 5% 50%,#fff 50%,transparent 51%)}
+main,header,.net{position:relative;z-index:1}
+h1,h2,h3{font-family:"Saira Condensed","Nunito Sans",sans-serif;font-weight:800;line-height:1.02;margin:0;letter-spacing:.01em;text-wrap:balance}
+h2{font-size:clamp(28px,4vw,40px)}h3{font-size:22px}
+a{color:inherit}
+.band{padding:clamp(16px,3vw,32px) max(4vw,14px)}
+.wrap{max-width:1180px;margin:0 auto}
+.mut{color:var(--mut)}.sm{font-size:14px}.m0{margin:0}
+.num{font-family:"Saira Condensed",sans-serif;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+
+/* ---------- masthead ---------- */
+.mast{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px max(4vw,14px);border-bottom:1px solid var(--line)}
+.mast a{display:flex;align-items:center;gap:10px;text-decoration:none}
+.mast b{font:800 24px/1 "Saira Condensed",sans-serif;letter-spacing:.04em}
+.mast svg{width:40px;height:40px;flex:none}
+.net{background:var(--bad);color:#fff;text-align:center;font-weight:800;padding:8px}
+
+/* ---------- controls ---------- */
+button{font:800 16px "Nunito Sans",sans-serif;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:var(--ink);color:var(--sky);cursor:pointer}
+button:hover{filter:brightness(1.08)}button:disabled{opacity:.35;cursor:not-allowed;filter:none}
+button.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+button.sm{min-height:36px;font-size:14px;padding:0 14px}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+input,select{font:16px "Nunito Sans",sans-serif;min-height:44px;padding:0 14px;border-radius:12px;border:1.5px solid var(--line);background:rgba(0,0,0,.35);color:var(--ink)}
+input[type=number]{width:110px}input.code{text-transform:uppercase;letter-spacing:.3em;width:8em;font:800 22px "Saira Condensed",sans-serif}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:700;color:var(--mut)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.stack>*+*{margin-top:14px}
+.panel{background:linear-gradient(160deg,var(--glass2),var(--glass));border:1px solid var(--line);border-radius:20px;padding:clamp(16px,2vw,22px);backdrop-filter:blur(6px)}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 12px;background:var(--glass2);font-weight:800;font-size:14px;white-space:nowrap}
+.pill.bad{background:rgba(255,107,107,.18);color:#ffc9c9}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--sky);padding:12px 18px;border-radius:14px;font-weight:800;max-width:90vw;z-index:9;display:none}
+.toast.show{display:block}
+
+/* ---------- landing & lobby ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(18px,4vw,48px);align-items:center;padding-block:clamp(10px,3vw,30px)}
+.hero h1{font-size:clamp(52px,9vw,112px);line-height:.9}
+.hero p{max-width:44ch;color:var(--mut);font-size:18px}
+.hero .planet{max-width:420px;justify-self:center;width:100%}
+@media(max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}.hero .planet{max-width:260px;order:-1}}
+.doors{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px;margin-top:22px}
+.roles4{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px;margin-top:22px}
+.roles4 .panel{border-top:4px solid var(--c)}
+.roles4 h3{color:var(--c)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips span{background:var(--glass2);border-radius:999px;padding:6px 14px;font-weight:700;display:inline-flex;gap:6px;align-items:center}
+.chips span.off{opacity:.45}
+.joincode{font:800 clamp(56px,10vw,108px)/.9 "Saira Condensed",sans-serif;letter-spacing:.12em;color:var(--captain)}
+
+/* ---------- host bar ---------- */
+.hostbar{background:rgba(0,0,0,.35);border-bottom:1px solid var(--line)}
+.hostbar .top{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-end;justify-content:space-between}
+
+/* ---------- player console (phone panel) ---------- */
+.deck{display:grid;grid-template-columns:minmax(0,460px) minmax(0,1fr);gap:22px;align-items:start;justify-content:center}
+@media(max-width:900px){.deck{grid-template-columns:minmax(0,1fr)}.deck .console{max-width:520px;margin-inline:auto;width:100%}}
+.console{--c:var(--accent);border-radius:28px;padding:16px;border:1px solid color-mix(in srgb,var(--c) 40%,transparent);
+  background:radial-gradient(420px 260px at 50% -40px,color-mix(in srgb,var(--c) 34%,transparent),transparent 70%),linear-gradient(180deg,color-mix(in srgb,var(--c) 14%,#0b0f24),#090c1d 70%);
+  box-shadow:0 30px 80px -40px color-mix(in srgb,var(--c) 70%,transparent),inset 0 1px 0 rgba(255,255,255,.08)}
+.r-captain{--c:var(--captain)}.r-vet{--c:var(--vet)}.r-pilot{--c:var(--pilot)}.r-engineer{--c:var(--engineer)}
+.c-head{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"team title help";align-items:center;gap:8px}
+.c-team{grid-area:team}.c-title{grid-area:title}.c-help{grid-area:help}
+@media(max-width:520px){.c-head{grid-template-columns:auto 1fr;grid-template-areas:"team help" "title title"}.c-help{justify-self:end}}
+.c-team{font-size:13px;font-weight:800;padding:6px 10px;border-radius:10px;background:rgba(0,0,0,.35)}
+.c-title{text-align:center;font:800 clamp(40px,9vw,54px)/1 "Saira Condensed",sans-serif;letter-spacing:.06em;color:#fff;text-shadow:0 0 24px color-mix(in srgb,var(--c) 80%,transparent)}
+.c-help{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.35);font-weight:800}
+.c-stats{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;margin:12px 4px 16px;text-align:center}
+.c-stats i{width:1px;height:34px;background:var(--line)}
+.c-stats .num{font-size:28px;line-height:1}
+.c-stats small{display:block;font-size:12px;color:var(--mut);font-weight:700}
+.c-stats .task{font:800 18px/1.05 "Saira Condensed",sans-serif;letter-spacing:.04em}
+.c-stats .cash{color:var(--good)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;justify-content:center}
+.tabs button{background:rgba(0,0,0,.3);color:var(--ink);min-height:36px;font-size:14px}
+.tabs button.on{background:var(--c);color:#0b0f24}
+
+/* item rows (animals, rockets) */
+.items{display:flex;flex-direction:column;gap:10px;max-height:min(62vh,640px);overflow:auto;padding:2px;scrollbar-width:thin}
+.item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 12px 12px 16px;border-radius:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08)}
+.item.on{background:color-mix(in srgb,var(--c) 24%,transparent);border-color:color-mix(in srgb,var(--c) 70%,transparent)}
+.item b{font:800 22px/1 "Saira Condensed",sans-serif;letter-spacing:.02em}
+.item .buy{display:flex;align-items:center;gap:10px;margin-top:8px}
+.item .price{font:800 22px/1 "Saira Condensed",sans-serif}
+.item .price small{font-size:14px;color:var(--mut);margin-right:2px}
+.item button{min-height:36px;padding:0 18px;background:#fff;color:#0b0f24}
+.item.on button{background:var(--c)}
+.medal{position:relative;width:76px;height:76px;border-radius:50%;display:grid;place-items:center;font-size:40px;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.22),rgba(255,255,255,.04) 70%);border:2px solid color-mix(in srgb,var(--c) 60%,transparent)}
+.medal svg{width:46px;height:46px}
+.badge{position:absolute;min-width:28px;height:28px;padding:0 6px;border-radius:999px;display:grid;place-items:center;font:800 14px/1 "Saira Condensed",sans-serif;background:#fff;color:#0b0f24;box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.badge.tl{top:-6px;left:-8px}.badge.br{bottom:-6px;right:-8px}.badge.tr{top:-6px;right:-8px}
+.badge.size{background:var(--c);color:#0b0f24}
+.up{font-size:12px;font-weight:800;color:#ffd0c9}
+
+/* captain */
+.give{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.07)}
+.give b{font:800 22px/1 "Saira Condensed",sans-serif;letter-spacing:.04em}
+.give .wallet{font:800 22px/1 "Saira Condensed",sans-serif;padding:6px 12px;border-radius:10px;background:rgba(0,0,0,.4);color:var(--good);min-width:64px;text-align:right}
+.give button{background:#fff;color:#0b0f24;min-height:38px}
+.launchbar{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+.launch{min-height:60px;font:800 26px/1 "Saira Condensed",sans-serif;letter-spacing:.12em;background:var(--c);color:#0b0f24}
+.launch:disabled{background:transparent;color:var(--mut);box-shadow:inset 0 0 0 2px var(--line);opacity:1}
+.launch.confirm{background:#fff}
+
+/* engineer */
+.tanks{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tank{text-align:center;padding:14px 10px;border-radius:18px;background:rgba(255,255,255,.07)}
+.tank h3{font-size:20px;letter-spacing:.04em}
+.tank svg{width:96px;height:120px;margin:8px auto 4px;display:block}
+.tank .num{font-size:30px}
+.tank button{margin-top:8px;width:100%;background:#fff;color:#0b0f24}
+.tank small{display:block;color:var(--mut);font-size:12px;font-weight:700;margin-top:6px}
+.onrocket{margin-top:12px;text-align:center;font-weight:700}
+
+/* mission status strip */
+.status{margin-top:16px;padding-top:12px;border-top:1px solid var(--line);text-align:center}
+.status small{display:block;color:var(--mut);font-weight:800;font-size:12px;margin-bottom:8px}
+.status .dots{display:flex;justify-content:center;gap:18px}
+.status .dot{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-size:24px;border:2px solid var(--line);color:var(--mut)}
+.status .dot svg{width:26px;height:26px}
+.status .dot.ok{border-color:var(--c);background:color-mix(in srgb,var(--c) 22%,transparent);color:#fff}
+.locked{margin-top:12px;text-align:center}
+
+/* side column */
+.side{display:grid;gap:16px}
+.crew>div{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.crew>div:last-child{border:0}
+.crew .who{display:flex;gap:10px;align-items:center}
+.crew .sw{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+.feed{font-size:15px}
+.feed div{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:6px 0;border-bottom:1px solid var(--line)}
+.feed div:last-child{border:0}
+.feed .k{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;background:var(--glass2)}
+
+/* ---------- shared big screen ---------- */
+.bigscreen{position:relative;border-radius:24px;overflow:hidden;min-height:clamp(420px,62vh,640px);border:1px solid var(--line);
+  background:radial-gradient(700px 400px at 50% 120%,rgba(196,85,47,.25),transparent 70%),#050716}
+.bigscreen .planet{position:absolute;left:50%;bottom:-38%;width:min(92%,880px);transform:translateX(-50%)}
+.bs-grid{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,280px);gap:18px;padding:clamp(14px,2.4vw,26px)}
+@media(max-width:760px){.bs-grid{grid-template-columns:minmax(0,1fr)}}
+.bs-clock .num{font-size:clamp(44px,6vw,64px);line-height:.9}
+.bs-feed{margin-top:12px;display:flex;flex-direction:column;gap:6px;max-width:460px}
+.bs-feed div{display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.45);border-radius:10px;padding:6px 10px;font-size:15px}
+.bs-feed .sw{width:12px;height:12px;border-radius:4px;flex:none}
+.bs-stats{text-align:right}
+.bs-stats h3{font-size:30px;letter-spacing:.06em}
+.bs-stat{margin-top:12px}
+.bs-stat .num{font-size:40px;line-height:1;color:var(--good)}
+.bs-stat small{display:block;color:var(--mut);font-weight:700}
+.bs-teams{position:relative;display:flex;flex-wrap:wrap;gap:8px;padding:0 clamp(14px,2.4vw,26px) clamp(14px,2.4vw,22px);margin-top:clamp(16px,5vh,60px)}
+.bs-team{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.55);border-radius:14px;padding:8px 10px;border:1px solid var(--line)}
+.bs-team b{font-size:14px}
+.bs-team .mini{display:flex;gap:3px}
+.bs-team .mini span{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;background:rgba(255,255,255,.08);color:var(--mut)}
+.bs-team .mini span.ok{background:var(--good);color:#06210f}
+.bs-team.done{border-color:var(--good)}
+.bs-pool{display:inline-flex;align-items:baseline;gap:6px;background:rgba(0,0,0,.45);border-radius:12px;padding:6px 12px;margin-top:10px}
+.bs-pool .num{font-size:28px;color:var(--engineer)}
+
+/* ---------- mission report (results + final) ---------- */
+.report{position:relative;border-radius:24px;overflow:hidden;border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(7,10,26,.15),rgba(7,10,26,.75) 70%),linear-gradient(170deg,#8a3a1f 0%,#5e2414 45%,#2c1210 100%)}
+.report::before{content:"";position:absolute;inset:auto 0 0 0;height:55%;opacity:.5;background:
+  radial-gradient(120px 40px at 20% 80%,rgba(0,0,0,.35),transparent 70%),radial-gradient(160px 50px at 70% 90%,rgba(0,0,0,.3),transparent 70%),radial-gradient(90px 30px at 45% 70%,rgba(255,160,110,.18),transparent 70%)}
+.report-in{position:relative;display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:clamp(16px,3vw,36px);padding:clamp(16px,3vw,34px)}
+@media(max-width:820px){.report-in{grid-template-columns:minmax(0,1fr)}}
+.report .title small{display:inline-block;font-weight:800;font-size:13px;padding:3px 10px;border-radius:6px;background:rgba(0,0,0,.4)}
+.report .title h2{font-size:clamp(46px,7vw,76px);line-height:.88;margin-top:8px}
+.report .title p{color:#ffd9c7;font-weight:700;margin:8px 0 0}
+.lb{display:flex;flex-direction:column;gap:6px}
+.lb .r{display:grid;grid-template-columns:34px minmax(0,1fr) auto auto;gap:10px;align-items:center;background:rgba(0,0,0,.42);border-radius:12px;padding:8px 12px}
+.lb .r.me{box-shadow:inset 0 0 0 2px var(--captain)}
+.lb .rank{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:800 15px/1 "Saira Condensed",sans-serif;background:var(--glass2)}
+.lb .r:first-child .rank{background:var(--captain);color:#0b0f24}
+.lb .name{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb .zoo{font-size:20px;letter-spacing:2px;white-space:nowrap;overflow:hidden;max-width:40vw}
+.lb .pts{font-size:26px;color:var(--good);min-width:3ch;text-align:right}
+.lb .why{grid-column:2/-1;font-size:14px;color:var(--mut);margin-top:-4px}
+.lb .why.ok{color:#bff0cf}.lb .why.bad{color:#ffc4c4}
+.terra{margin-top:14px}
+.terra .bar{height:12px;border-radius:999px;background:rgba(0,0,0,.45);overflow:hidden;margin-top:6px}
+.terra .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--sea),var(--terra))}
+.debrief{margin-top:18px}
+.debrief ol{padding-left:20px;margin:8px 0 0}.debrief li{margin:6px 0}
+
+@media(prefers-reduced-motion:no-preference){
+  .planet .atmo{animation:breathe 6s ease-in-out infinite}
+  @keyframes breathe{50%{opacity:.75}}
+  .tmr.hot{animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.5}}
+}
+.tmr.hot{color:var(--bad)}
+.scroll{overflow-x:auto}
+.drum{position:relative;width:84px;height:104px;margin:10px auto 6px;border-radius:14px;border:2px solid rgba(255,255,255,.35);background:rgba(255,255,255,.06);overflow:hidden}
+.drum::before{content:"";position:absolute;left:28px;top:-8px;width:28px;height:10px;border-radius:3px;background:rgba(255,255,255,.35)}
+.drum i{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 90%,#fff),var(--c));transition:height .25s linear}
+.drum::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 33%,rgba(255,255,255,.14) 33%,rgba(255,255,255,.14) calc(33% + 2px),transparent calc(33% + 2px),transparent 66%,rgba(255,255,255,.14) 66%,rgba(255,255,255,.14) calc(66% + 2px),transparent calc(66% + 2px))}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.final-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:16px;margin-top:16px;align-items:center}
+@media(max-width:760px){.final-grid{grid-template-columns:minmax(0,1fr)}.final-grid .planet{max-width:260px;margin:0 auto;display:block}}
+.hostbar.compact .joincode{font-size:clamp(34px,4vw,48px)}
+.hostbar.compact{padding-block:12px}

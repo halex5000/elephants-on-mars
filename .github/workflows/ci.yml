@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: App (types, unit, integration, load, browser)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run test:unit
+      - run: npm run test:integration
+      - name: Load test (200 players + 5 side games)
+        run: npm run test:load
+      - run: npx playwright install --with-deps chromium
+      - name: Browser tests
+        run: npm run test:e2e
+        env:
+          CI: "true"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  infra:
+    name: Infra (CDK guardrails + synth)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: infra/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Synth (no AWS credentials needed)
+        run: npx cdk synth -q -c imageUri=example.invalid/elephants-on-mars:ci
+
+  docker:
+    name: Container image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t elephants-on-mars:ci .
+      - name: Run it the way Fargate does (read-only root, non-root user) and hit the health check
+        run: |
+          docker run -d --name eom --read-only -p 3000:3000 elephants-on-mars:ci
+          for i in $(seq 1 20); do curl -fsS http://127.0.0.1:3000/healthz && exit 0; sleep 1; done
+          docker logs eom; exit 1

@@ -1,0 +1,51 @@
+# Fly.io: one always-on machine (~$3.69/mo in ewr/iad at 512 MB, plus pennies of bandwidth).
+#
+# Game state lives in memory in ONE process, so this app must run EXACTLY ONE machine.
+# Two machines would split players across two separate copies of every game.
+#   first deploy:  fly deploy --ha=false
+#   check:         fly scale show            (count should be 1)
+#   fix:           fly scale count 1
+#
+# A deploy or restart ends any live game. Don't deploy during an event.
+# Set the host passcode once (it's a secret, not in this file):
+#   fly secrets set HOST_PASSCODE='pick-something-long'
+#
+# `app` must be globally unique on Fly. Change it, or let `fly launch` pick one.
+app = "elephants-on-mars"
+primary_region = "ewr"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  HOST = "0.0.0.0"
+  PORT = "3000"
+  MAX_GAMES = "50"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # Never stop for idleness: stopping wipes in-memory games if every player
+  # drops off briefly (say, the host's laptop sleeps between missions).
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  # Each player holds one WebSocket. The default soft limit (20) is only a
+  # load-balancing hint, but set it to what one machine really handles.
+  [http_service.concurrency]
+    type = "connections"
+    soft_limit = 400
+    hard_limit = 500
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "15s"
+    method = "GET"
+    path = "/healthz"
+    timeout = "3s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

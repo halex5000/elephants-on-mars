@@ -1,0 +1,29 @@
+# Render Blueprint: deploys from your GitHub repo (Render builds the Dockerfile).
+#
+# plan: free  -> $0, but spins down after 15 min with no traffic and takes about a
+#                minute to wake. Open players' browsers ping every 25 s, so it stays
+#                up during a game. Open the site a few minutes before you start.
+#                A spin-down ends any game in progress.
+# plan: starter -> $7/mo, never sleeps.
+#
+# Game state lives in memory, so keep numInstances at 1.
+# A deploy or restart ends any live game. Don't deploy during an event.
+services:
+  - type: web
+    name: elephants-on-mars
+    runtime: docker
+    region: virginia
+    plan: free
+    dockerfilePath: ./Dockerfile
+    numInstances: 1
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: MAX_GAMES
+        value: "50"
+      - key: HOST_PASSCODE
+        sync: false # Render asks for this when you create the Blueprint
