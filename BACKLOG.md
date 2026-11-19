@@ -11,6 +11,7 @@ _Last updated 2026-11-19 by Dex. Replace this block when you hand off; don't pre
 - **N14 merged (#16):** A host can restore an offline seat to a connected, unseated newcomer during briefing, play or results. Match the join ID on the call. The returning tab keeps its login and the previous login expires. Covered by engine, WebSocket and phone-sized browser tests. Rehearse this once during N1.
 - **In flight:** Dex → **N15 practice bots** ready for review alongside N16 (Mars postcard, #20) and N17 (Mission Control receipts, #19). Rehearse one human and three Scouts during N1. Claude → L2 accessibility (#18), then **Captain "Take back $1"** (engine + Captain console).
 - **Infra audit:** `minimatch` advisory in `/infra` is bundled inside `aws-cdk-lib` (npm overrides can't reach it), deploy-time tooling only. Upgrade CDK once a release includes the upstream fix, then rerun both audits.
+- **N11 projector (Dex, in review):** Above ten teams, the projector shows the launch count and ten leading crews, with the rest of the standings available on demand. Check readability from the back of the room at N1.
 - **Next for Alex:** phone-on-cell-data smoke test on the live URL, then the playtest with `docs/playtest.md`.
 
 ## Now

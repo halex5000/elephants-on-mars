@@ -488,10 +488,11 @@ function screenPage(v: HostView): string {
     v.phase === 'final'
       ? ''
       : `<div class="screen-join"><span class="sm mut">Late? Join with</span><b class="code">${esc(v.code)}</b><div class="qrbox mini">${qr(joinUrl, `QR code to join game ${v.code}`)}</div></div>`;
+  const compact = v.teams.length > 10;
   let body = '';
   if (v.phase === 'teams') body = `<h2>Teams</h2><p class="mut">Find your team, then head to your breakout room.</p>${teamCards(v)}`;
-  else if (v.phase === 'play') body = bigScreen(v);
-  else if (v.phase === 'results') body = missionReport(v);
+  else if (v.phase === 'play') body = bigScreen(v, compact);
+  else if (v.phase === 'results') body = missionReport(v, compact);
   else body = finalReport(v, true);
   return band(`${corner}${body}`, 'projector');
 }
@@ -500,7 +501,7 @@ function teamCards(v: HostView) {
   return `<div class="roles4">${v.teams.map(t => `<div class="panel" style="--c:${teamColor(t.name, names)}"><h3>${esc(t.name)}</h3>${t.members.map(m => `<div class="sm ${m.connected ? '' : 'mut'}" style="margin-top:6px"><b>${esc(m.name)}</b> <span class="mut">${m.roles.map(r => RI[r].t).join(' + ')}${m.connected ? '' : ', offline'}</span></div>`).join('')}</div>`).join('')}</div>`;
 }
 /** The shared screen: every team's progress and every move, over a planet that greens as the group scores. */
-function bigScreen(v: HostView) {
+function bigScreen(v: HostView, compact = false) {
   const names = v.teams.map(t => t.name);
   const progress = v.stats.teams ? Math.round((v.stats.launched / v.stats.teams) * 100) : 0;
   const mini = (ok: boolean, icon: string, label: string) =>
@@ -510,15 +511,15 @@ function bigScreen(v: HostView) {
 ${v.fuel ? `<div class="bs-pool"><span class="num" ${poolAttrs(v.fuel)}>0</span><span class="sm">fuel in the shared pool</span></div>` : ''}
 <div class="bs-feed" id="feed">${
     v.feed
-      .slice(0, 9)
+      .slice(0, compact ? 4 : 9)
       .map(
         f =>
           `<div><span class="sw" style="background:${teamColor(f.teamName, names)}"></span><span><b>${esc(f.teamName)}</b> ${esc(f.text)}</span></div>`,
       )
       .join('') || '<div>Waiting for the first move…</div>'
   }</div></div>
-<div class="bs-stats"><h3>Mission ${v.round} of ${v.totalRounds}</h3><div class="bs-stat"><span class="num">${progress}%</span><small>launched</small></div><div class="bs-stat"><span class="num">$${v.stats.distributed}</span><small>distributed</small></div><div class="bs-stat"><span class="num">$${v.stats.spent}</span><small>spent</small></div></div></div>
-<div class="bs-teams">${v.teams.map(t => `<div class="bs-team ${t.status.launched ? 'done' : ''}"><span class="sw" style="width:10px;height:10px;border-radius:3px;background:${teamColor(t.name, names)}"></span><b>${esc(t.name)}</b><span class="mini">${mini(t.status.animal, '🐾', 'animal')}${mini(t.status.rocket, '🚀', 'rocket')}${mini(t.status.fuel, '💧', 'fuel')}${mini(t.status.launched, '🔥', 'launched')}</span></div>`).join('')}</div></div>`;
+<div class="bs-stats"><h3>Mission ${v.round} of ${v.totalRounds}</h3><div class="bs-stat">${compact ? `<span class="num">${v.stats.launched} of ${v.stats.teams} <small>launched</small></span>` : `<span class="num">${progress}%</span><small>launched</small>`}</div><div class="bs-stat"><span class="num">$${v.stats.distributed}</span><small>distributed</small></div><div class="bs-stat"><span class="num">$${v.stats.spent}</span><small>spent</small></div></div></div>
+${compact ? projectedRanking(v) : `<div class="bs-teams">${v.teams.map(t => `<div class="bs-team ${t.status.launched ? 'done' : ''}"><span class="sw" style="width:10px;height:10px;border-radius:3px;background:${teamColor(t.name, names)}"></span><b>${esc(t.name)}</b><span class="mini">${mini(t.status.animal, '🐾', 'animal')}${mini(t.status.rocket, '🚀', 'rocket')}${mini(t.status.fuel, '💧', 'fuel')}${mini(t.status.launched, '🔥', 'launched')}</span></div>`).join('')}</div>`}</div>`;
 }
 
 /* ---------- player ---------- */
@@ -642,13 +643,26 @@ function engBody(v: PlayerView, lock: boolean, wallet: number) {
 }
 
 /* ---------- reports (results + final) ---------- */
-function missionReport(v: HostView | PlayerView) {
+function projectedRanking(v: Common) {
+  let rank = 0;
+  const rows = v.standings.map((team, i) => {
+    if (i === 0 || team.points !== v.standings[i - 1]!.points) rank = i + 1;
+    return `<li><span class="rank">${rank}</span><span>${esc(team.name)}</span><strong>${team.points} pts</strong></li>`;
+  });
+  return `<section class="panel projected-ranking"><h3>Top 10 teams · total points</h3>
+    <ol>${rows.slice(0, 10).join('')}</ol>
+    <details id="ranking-${v.phase}"><summary>Show remaining ${rows.length - 10} teams</summary><ol start="11">${rows.slice(10).join('')}</ol></details></section>`;
+}
+function missionReport(v: HostView | PlayerView, compact = false) {
   const r = v.results[v.results.length - 1];
   if (!r) return '';
   const mine = v.kind === 'player' ? v.team?.id : undefined;
+  const title = `<div class="title"><small>Mission ${r.round}</small><h2>Mission report</h2><p>Who made it to Mars</p>${terraBar(v)}</div>`;
+  const receipt = r.receipt ? `<section class="panel"><h3>Mission Control receipt</h3><p>${esc(r.receipt)}</p></section>` : '';
+  if (compact)
+    return `<div class="report"><div class="report-in">${title}${projectedRanking(v)}</div></div>${receipt}${landingMap(v, false)}`;
   const rows = [...r.outcomes].sort((a, b) => b.points - a.points);
-  return `<div class="report"><div class="report-in"><div class="title"><small>Mission ${r.round}</small><h2>Mission report</h2><p>Who made it to Mars</p>${terraBar(v)}</div>
-${r.receipt ? `<section class="panel"><h3>Mission Control receipt</h3><p>${esc(r.receipt)}</p></section>` : ''}
+  return `<div class="report"><div class="report-in">${title}${receipt}
 <div class="lb" id="results">${rows
     .map(
       (
@@ -671,7 +685,7 @@ function finalReport(v: HostView | PlayerView, projector = false) {
   return `<div class="report"><div class="report-in"><div class="title"><small>Final</small><h2>Mission report</h2><p>Notable contributions to biodiversity on Mars</p>
 <p class="m0" style="margin-top:14px;font-size:20px"><b id="winner">${f.winner ? `${esc(f.winner)} wins with ${f.topPoints} points` : 'Mars is still waiting'}</b></p>${terraBar(v)}
 ${f.failed || f.scrubbed ? `<p class="sm m0" style="margin-top:8px;color:#ffd9c7">${[f.failed ? `${plural(f.failed, "rocket didn't", "rockets didn't")} make it` : '', f.scrubbed ? `${plural(f.scrubbed, 'mission', 'missions')} never launched` : ''].filter(Boolean).join(', and ')}.</p>` : ''}</div>
-<div class="lb">${f.byRound.map((t, i) => `<div class="r ${t.team === mine ? 'me' : ''}"><span class="rank">${i + 1}</span><span class="name">${esc(t.name)}${t.bots?.length ? `<small> ${t.bots.map(esc).join(', ')}</small>` : ''}</span><span class="zoo">${t.landed.map(a => a.emoji).join('')}</span><span class="num pts">${t.total}</span></div>`).join('')}</div></div></div>
+${projector && v.standings.length > 10 ? projectedRanking(v) : `<div class="lb">${f.byRound.map((t, i) => `<div class="r ${t.team === mine ? 'me' : ''}"><span class="rank">${i + 1}</span><span class="name">${esc(t.name)}${t.bots?.length ? `<small> ${t.bots.map(esc).join(', ')}</small>` : ''}</span><span class="zoo">${t.landed.map(a => a.emoji).join('')}</span><span class="num pts">${t.total}</span></div>`).join('')}</div>`}</div></div>
 ${
   projector
     ? ''
