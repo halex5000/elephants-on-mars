@@ -4,7 +4,7 @@ import * as E from '../../src/server/engine.js';
 import { ANIMALS, ROCKETS, FUEL_SEND_STEP, animalById, rocketById, fits } from '../../src/server/catalog.js';
 import { AUCTION, FUEL, auctionPrice, fuelInPool, fuelRate } from '../../src/shared/market.js';
 import { ROLES } from '../../src/shared/protocol.js';
-import { setup, started, seeded, holder, tid, fund, mission, gatherFuel, T0, SETTLED } from '../helpers.js';
+import { setup, started, seeded, holder, tid, fund, mission, T0, SETTLED } from '../helpers.js';
 
 const throwsGame = (fn: () => unknown, re: RegExp) => assert.throws(fn, (e: unknown) => e instanceof E.GameError && re.test(e.message));
 const roleOf = (g: E.Game, pid: string) => E.teamOf(g, pid)!.roles.join('+');
@@ -467,7 +467,7 @@ describe('economy sanity (tuning guardrails)', () => {
 
 describe('additional auction copies at a server-selected team count', () => {
   for (const [threshold, twoCopies] of [[undefined, false], [3, false], [2, true]] as const) {
-    test('two teams, threshold ' + threshold, () => {
+    test(`two teams, threshold ${threshold}`, () => {
       const g = setup(8);
       E.startRound(g, T0, seeded(), threshold);
       const at = T0 + SETTLED;

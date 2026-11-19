@@ -202,7 +202,7 @@ export const launched = (g: Game, team: string, round: number) => picksFor(g, te
 export function balance(g: Game, team: string, role: Role): number {
   let b = role === 'captain' ? g.settings.income * Math.max(1, g.round) : 0;
   for (const t of g.transfers) if (t.team === team) { if (t.to === role) b += t.amount; if (t.from === role) b -= t.amount; }
-  if (role !== 'captain') for (const [k, p] of Object.entries(g.picks)) if (k.startsWith(team + '|')) b -= p.spent[role];
+  if (role !== 'captain') for (const [k, p] of Object.entries(g.picks)) if (k.startsWith(`${team}|`)) b -= p.spent[role];
   return b;
 }
 
@@ -225,7 +225,9 @@ function guardMission(g: Game, team: Team, now: number) {
   if (launched(g, team.id, g.round)) fail('Your rocket already launched.');
 }
 function slot(g: Game, team: string): Picks {
-  return (g.picks[key(team, g.round)] ??= { fuel: 0, fuelGrabs: 0, spent: { vet: 0, pilot: 0, engineer: 0 } });
+  const k = key(team, g.round);
+  g.picks[k] ??= { fuel: 0, fuelGrabs: 0, spent: { vet: 0, pilot: 0, engineer: 0 } };
+  return g.picks[k];
 }
 function log(g: Game, now: number, team: Team, kind: FeedItem['kind'], text: string) {
   g.feed.push({ at: now, round: g.round, teamName: team.name, kind, text });

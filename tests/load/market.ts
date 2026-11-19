@@ -20,7 +20,7 @@ async function run(teams: number, trial: number, mode: Mode) {
   try {
     const h = await host(app.url);
     for (let i = 0; i < teams * 4; i += 16) {
-      const batch = Array.from({ length: Math.min(16, teams * 4 - i) }, (_, j) => join(app.url, h.creds!.code, 'Crew ' + (i + j), undefined, false));
+      const batch = Array.from({ length: Math.min(16, teams * 4 - i) }, (_, j) => join(app.url, h.creds!.code, `Crew ${i + j}`, undefined, false));
       players.push(...await Promise.all(batch));
     }
     h.act({ a: 'makeTeams' });
@@ -50,7 +50,7 @@ async function run(teams: number, trial: number, mode: Mode) {
       for (const result of outcomes) {
         const c = crews.get(result.team)!;
         assert.equal(c.rocketAttempts, c.rocketFailures + Number(Boolean(result.rocket)), 'unaccounted rocket attempt');
-        const picks = app.games.get(h.creds!.code)!.picks[result.team + '|' + round];
+        const picks = app.games.get(h.creds!.code)!.picks[`${result.team}|${round}`];
         assert.equal(c.firstFuel !== undefined, (picks?.fuelGrabs ?? 0) > 0, 'unobserved fuel purchase');
         const since = (at?: number) => at === undefined ? null : at - start;
         const wait = (from?: number) => from === undefined ? null : (c.firstFuel ?? end) - from;
@@ -101,5 +101,5 @@ for (const mode of modes) for (const teams of sizes) {
   }
 }
 const json = JSON.stringify(rows);
-if (process.env.MARKET_REPORT) await writeFile(process.env.MARKET_REPORT, json + '\n');
+if (process.env.MARKET_REPORT) await writeFile(process.env.MARKET_REPORT, `${json}\n`);
 else console.log(json);

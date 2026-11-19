@@ -17,7 +17,7 @@ export class Client {
   keepRaw = true;
 
   constructor(public url: string, public onView?: (c: Client) => void) {
-    this.ws = new WebSocket(url.replace(/^http/, 'ws') + '/ws');
+    this.ws = new WebSocket(`${url.replace(/^http/, 'ws')}/ws`);
     this.opened = new Promise((res, rej) => { this.ws.once('open', () => res()); this.ws.once('error', rej); });
     this.ws.on('message', d => {
       const s = String(d); if (this.keepRaw) this.raw.push(s);
@@ -27,7 +27,11 @@ export class Client {
       if (m.t === 'created') this.creds = { code: m.code, hostToken: m.hostToken };
       if (m.t === 'joined') this.creds = { code: m.code, playerId: m.playerId, token: m.token };
       if (m.t === 'view' && this.onView) this.onView(this);
-      this.waiters = this.waiters.filter(w => (w.pred() ? (w.resolve(), false) : true));
+      this.waiters = this.waiters.filter(w => {
+        if (!w.pred()) return true;
+        w.resolve();
+        return false;
+      });
     });
     this.ws.on('close', () => { this.closed = true; this.waiters.forEach(w => w.pred() && w.resolve()); });
   }
@@ -87,7 +91,7 @@ export function playBot(radios: Map<string, Radio>, pickAnimal: Strategy = () =>
   const step = (c: Client) => {
     if (c.closed) { clients.delete(c); return; }
     if (!clients.has(c)) { clients.add(c); timer ??= setInterval(() => { clients.forEach(step); if (!clients.size) { clearInterval(timer); timer = undefined; } }, 40); timer.unref(); }
-    const v = c.view; if (!v || v.kind !== 'player' || !v.team || v.phase !== 'play' || !v.console) return;
+    const v = c.view; if (v?.kind !== 'player' || !v.team || v.phase !== 'play' || !v.console) return;
     const t = v.team, r = v.round, now = clock();
     let radio = radios.get(t.id); if (!radio || radio.round !== r) { radio = { round: r }; radios.set(t.id, radio); }
     const has = (role: Role) => t.roles.includes(role);

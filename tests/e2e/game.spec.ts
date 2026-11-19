@@ -222,7 +222,7 @@ async function scanQr(page: Page): Promise<string | undefined> {
   const size = 400;
   const px = await page.locator('.qrbox svg.qr').evaluate(async (svg, n) => {
     const img = new Image();
-    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg));
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(svg))}`;
     await img.decode();
     const c = document.createElement('canvas'); c.width = c.height = n;
     const g = c.getContext('2d')!; g.imageSmoothingEnabled = false; g.drawImage(img, 0, 0, n, n);

@@ -24,11 +24,21 @@ A playable, faithful homage to MeetMax Games' *Elephants on Mars*, for Alex to r
 npm install
 npm run build && npm start      # http://localhost:3000 (GAME_SPEED=5 to fast-forward the clock)
 npm run typecheck
+npm run check                   # Biome lint + format check + secret scan (what CI runs)
+npm run format                  # fix formatting
 npm test                        # unit + integration
 npm run test:load               # 200 bots
 npm run test:e2e                # Playwright (npx playwright install chromium first)
 npm run infra:test              # CDK guardrails
 ```
+
+## Quality gates
+
+`npm install` sets up git hooks (via `simple-git-hooks`):
+- **pre-commit** (seconds): secret scan on staged files (`secretlint`), then Biome formats and lints them.
+- **pre-push** (~30 s): typecheck + unit tests.
+
+CI runs the same checks (`npm run check`) plus everything else, so it's the real gate. Hooks just catch problems earlier. Don't bypass them with `--no-verify`; if a hook is wrong, fix the hook. Biome replaces ESLint/Prettier here because `typescript-eslint` doesn't support TypeScript 7 yet.
 
 ## Rules that keep the game honest
 

@@ -51,7 +51,6 @@ async function runGame(n: number, label: string) {
   const all = players.flatMap(p => p.errors);
   const collisions = all.filter(e => MARKET.test(e)).length;
   const errors = all.filter(e => !MARKET.test(e) && !/Slow down/.test(e));
-  let views = 0; for (const p of players) views += (p as unknown as { viewCount?: number }).viewCount ?? 0;
   players.forEach(p => p.close()); h.close();
   return { label, players: n, teams: total / ROUNDS, joinMs: Math.round(joinMs), launchMs: launchTimes.map(Math.round), landed, total, errors, collisions };
 }
@@ -68,5 +67,5 @@ const problems = results.flatMap(r => [
   ...r.launchMs.filter(ms => ms > MAX_LAUNCH_MS).map(ms => `${r.label}: a round took ${Math.round(ms)} ms to fully launch`),
 ]);
 await own?.close();
-if (problems.length) { console.error('LOAD TEST FAILED\n' + problems.join('\n')); process.exit(1); }
+if (problems.length) { console.error(`LOAD TEST FAILED\n${problems.join('\n')}`); process.exit(1); }
 console.log('LOAD TEST PASSED');

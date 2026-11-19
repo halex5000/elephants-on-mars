@@ -2,7 +2,7 @@
 // the server's per-viewer view, so devtools only ever show what you're allowed to know.
 import morphdom from 'morphdom';
 import {
-  ROLES, type Role, type ClientMsg, type ServerMsg, type HostView, type PlayerView, type Common, type Outcome, type Settings, type FeedItem, type FuelMarket,
+  ROLES, type Role, type ClientMsg, type ServerMsg, type HostView, type PlayerView, type Common, type Settings, type FeedItem, type FuelMarket,
 } from '../shared/protocol.js';
 import { auctionPrice, fuelInPool } from '../shared/market.js';
 import { planet, rocket, paw, rocketGlyph, drop, qr } from './art.js';
@@ -17,7 +17,6 @@ const RI: Record<Role, { t: string; i: string; d: string }> = {
 
 const $ = <T extends Element = HTMLElement>(s: string) => document.querySelector(s) as T | null;
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
-const fmt = (n: number) => '$' + Math.round(n).toLocaleString();
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /* ---------- local identity (per tab for players, so one person can test 4 roles in 4 tabs) ---------- */
@@ -146,11 +145,11 @@ function tickMarkets() {
       const b = el as HTMLButtonElement;
       b.dataset.price = String(price);
       b.disabled = b.dataset.locked === '1' || price > Number(b.dataset.wallet);
-    } else el.textContent = '$' + price;
+    } else el.textContent = `$${price}`;
   });
   document.querySelectorAll<HTMLElement>('[data-pool]').forEach(el => {
     const units = fuelInPool(Number(el.dataset.reset), Number(el.dataset.rate), now);
-    if (el.dataset.fill) { el.style.height = Math.min(100, (units / 120) * 100) + '%'; return; }
+    if (el.dataset.fill) { el.style.height = `${Math.min(100, (units / 120) * 100)}%`; return; }
     if (el.tagName === 'BUTTON') {
       const b = el as HTMLButtonElement;
       b.dataset.units = String(units);

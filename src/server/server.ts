@@ -213,7 +213,7 @@ export async function startServer(opts: ServerOptions): Promise<{ server: Server
       case 'join': {
         const g = games.get(String(msg.code ?? '').trim().toUpperCase());
         if (!g) { send(c, { t: 'error', message: 'No game with that code. Check it with your host.' }); return; }
-        const p = E.addPlayer(g, 'p_' + randomBytes(6).toString('hex'), token(), msg.name, now());
+        const p = E.addPlayer(g, `p_${randomBytes(6).toString('hex')}`, token(), msg.name, now());
         Object.assign(c, { code: g.code, role: 'player', playerId: p.id });
         g.touchedAt = now();
         log('player_joined', { code: g.code, players: g.players.length });

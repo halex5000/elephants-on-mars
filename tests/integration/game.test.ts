@@ -181,7 +181,7 @@ describe('auth and abuse', () => {
     for (let i = 0; i < 40; i++) x.send({ t: 'ping' });
     await x.until(() => x.errors.includes('Slow down a little.'), 3000, 'rate limit');
     x.close();
-    const res = await fetch(app.url + '/healthz'); assert.equal(res.status, 200);
+    const res = await fetch(`${app.url}/healthz`); assert.equal(res.status, 200);
   });
 
   test('oversized message closes only that connection', async () => {
@@ -282,20 +282,20 @@ describe('connections', () => {
 
 describe('http', () => {
   test('healthz, app routes, security headers, no path traversal', async () => {
-    const hz = await (await fetch(app.url + '/healthz')).json() as { ok: boolean };
+    const hz = await (await fetch(`${app.url}/healthz`)).json() as { ok: boolean };
     assert.equal(hz.ok, true);
     for (const p of ['/', '/host/ABCD', '/play/ABCD', '/join/ABCD']) {
       const r = await fetch(app.url + p); assert.equal(r.status, 200, p);
       assert.match(r.headers.get('content-security-policy') ?? '', /default-src 'self'/);
     }
-    assert.equal((await fetch(app.url + '/app.js')).headers.get('content-type'), 'text/javascript; charset=utf-8');
-    const trav = await fetch(app.url + '/..%2f..%2fpackage.json'); assert.ok([403, 404].includes(trav.status), String(trav.status));
-    assert.equal((await fetch(app.url + '/nope.js')).status, 404);
-    assert.equal((await fetch(app.url + '/', { method: 'POST' })).status, 405);
+    assert.equal((await fetch(`${app.url}/app.js`)).headers.get('content-type'), 'text/javascript; charset=utf-8');
+    const trav = await fetch(`${app.url}/..%2f..%2fpackage.json`); assert.ok([403, 404].includes(trav.status), String(trav.status));
+    assert.equal((await fetch(`${app.url}/nope.js`)).status, 404);
+    assert.equal((await fetch(`${app.url}/`, { method: 'POST' })).status, 405);
   });
 
   test('websocket only on /ws', async () => {
-    const ws = new WebSocket(app.url.replace('http', 'ws') + '/elsewhere');
+    const ws = new WebSocket(`${app.url.replace('http', 'ws')}/elsewhere`);
     await new Promise<void>(res => { ws.on('error', () => res()); ws.on('close', () => res()); });
     await sleep(10);
   });

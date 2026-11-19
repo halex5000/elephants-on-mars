@@ -10,7 +10,7 @@ export async function loadGames(path: string): Promise<Game[]> {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return [];
     throw err;
   }
-  let snapshot;
+  let snapshot: { version?: unknown; games?: unknown } | null;
   try { snapshot = JSON.parse(json); }
   catch { throw new Error('Malformed game snapshot'); }
   if (snapshot?.version !== 1 || !Array.isArray(snapshot.games)) throw new Error('Unsupported game snapshot');
@@ -28,7 +28,7 @@ export async function loadGames(path: string): Promise<Game[]> {
 
 export async function saveGames(path: string, games: Iterable<Game>) {
   const json = JSON.stringify({ version: 1, games: Array.from(games) });
-  const temp = path + '.' + randomUUID() + '.tmp';
+  const temp = `${path}.${randomUUID()}.tmp`;
   const file = await open(temp, 'wx', 0o600);
   try {
     try { await file.writeFile(json); await file.sync(); }
