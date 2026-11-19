@@ -111,6 +111,21 @@ const poolUnits = async (p: Page) => Number(await p.locator('.tank span.num[data
 const onRocket = async (p: Page) => Number(await p.locator('.onrocket .num').innerText());
 const stock = async (p: Page) => Number(await p.locator('.tank').nth(1).locator('.num').innerText());
 
+test('each crew role can give one dollar back to the Captain', async ({ browser }) => {
+  const { byRole } = await setupMission(browser, { mobileFor: 1, income: 10 });
+  const label = 'Give $1 back to Captain';
+  await expect(byRole.captain.getByRole('button', { name: label })).toHaveCount(0);
+  for (const role of ['vet', 'pilot', 'engineer'] as const) {
+    const button = byRole[role].getByRole('button', { name: label });
+    await expect(button).toBeDisabled();
+    await give(byRole.captain, role, 1);
+    await button.click();
+    await expect(wallet(byRole[role])).toHaveText('$0');
+    await expect(wallet(byRole.captain)).toHaveText('$10');
+    await expect(button).toBeDisabled();
+  }
+});
+
 test('a full mission through the real UI lands the animal', async ({ browser }) => {
   const { host, byRole: R } = await setupMission(browser);
 

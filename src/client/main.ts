@@ -567,6 +567,7 @@ function deck(v: PlayerView) {
 ${ui.help ? `<p class="sm" style="margin:10px 4px 0">${RI[tab].d}</p>` : ''}
 <div class="c-stats"><div><span class="num tmr" role="timer" aria-label="Time left"></span><small>until close</small></div><i></i><div class="task">${TASK[tab]}</div><i></i><div><span class="num cash">$${wallet}</span><small>you have</small></div></div>
 ${t.roles.length > 1 ? `<div class="tabs">${t.roles.map(r => `<button data-act="tab" data-r="${r}" class="${r === tab ? 'on' : ''}" aria-pressed="${r === tab}">${RI[r].t}</button>`).join('')}</div>` : ''}
+${tab !== 'captain' ? `<button class="ghost sm" data-act="returnDollar" data-from="${tab}" ${wallet < 1 ? 'disabled' : ''}>Give $1 back to Captain</button>` : ''}
 ${body}
 ${t.radio ? `<p class="sm"><b>Team radio</b> · ${t.radio.size ? `Payload size ${esc(t.radio.size)}` : 'Waiting for animal'} · ${t.radio.need ? `${t.radio.need} fuel requested` : 'Waiting for rocket'}</p>` : ''}
 ${t.status.launched ? '<p class="locked pill">Launched. Results come when the mission closes.</p>' : secsLeft() <= 0 ? `<p class="locked pill bad">Time's up</p>` : ''}
@@ -749,6 +750,9 @@ document.addEventListener('click', e => {
       break;
     case 'sendFuel':
       act({ a: 'sendFuel' });
+      break;
+    case 'returnDollar':
+      act({ a: 'transfer', from: d.from as Role, to: 'captain', amount: 1 });
       break;
     case 'takeBack':
       act({ a: 'reclaim', from: d.from as Role, amount: 1 });
