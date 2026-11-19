@@ -5,6 +5,8 @@
 import { test, expect, type Browser, type Page } from '@playwright/test';
 import jsQRModule from 'jsqr';
 import { E2E_PASSCODE } from './env.js';
+import { join as botJoin, type Client } from '../bot.js';
+import { fuelInPool } from '../../src/shared/market.js';
 
 type Role = 'captain' | 'vet' | 'pilot' | 'engineer';
 
@@ -286,6 +288,54 @@ test('a big-screen link opened outside the host browser goes to the join form', 
   await expect(stranger.locator('#jcode')).toHaveValue(code);
   await expect(stranger.getByText(/big screen opens from the host's browser/)).toBeVisible();
 });
+
+/** A WebSocket bot that joins as a solo team (all four roles) and launches a cat as soon as the shared pool allows. */
+const botLaunches = (baseURL: string, code: string) => botJoin(baseURL, code, 'Rocketeer');
+async function launchSolo(b: Client) {
+  await b.until(() => b.view?.phase === 'play', 10_000, 'mission started');
+  b.act({ a: 'transfer', from: 'captain', to: 'vet', amount: 5 });
+  b.act({ a: 'transfer', from: 'captain', to: 'pilot', amount: 8 });
+  b.act({ a: 'transfer', from: 'captain', to: 'engineer', amount: 2 });
+  b.act({ a: 'buyAnimal', animal: 'cat', maxPrice: 99 });
+  b.act({ a: 'buyRocket', rocket: 'compact', maxPrice: 99 }); // needs 20 fuel
+  // Views only arrive when something changes, so project the game clock forward from the last one.
+  const t0 = Date.now(), s0 = b.pv.serverNow, speed = b.pv.speed || 1;
+  const pool = () => { const m = b.pv.console?.engineer?.market; return m ? fuelInPool(m.resetAt, m.ratePerSec, s0 + (Date.now() - t0) * speed) : 0; };
+  await expect.poll(pool, { timeout: 15_000 }).toBeGreaterThanOrEqual(20);
+  b.act({ a: 'buyFuel', minUnits: 1 });
+  await b.until(() => (b.pv.console?.engineer?.stock ?? 0) >= 20, 10_000, 'fuel in stock');
+  b.act({ a: 'sendFuel' }); b.act({ a: 'sendFuel' });
+  await b.until(() => b.pv.team?.status.fuel === true, 5000, 'fuel loaded');
+  b.act({ a: 'launch' });
+  await b.until(() => b.pv.team?.status.launched === true, 5000, 'launched');
+}
+
+for (const motion of ['no-preference', 'reduce'] as const) {
+  test(`a launch lifts off once on the big screen (${motion === 'reduce' ? 'reduced motion: no movement' : 'animated'})`, async ({ browser, baseURL }) => {
+    const { host, code } = await createGame(browser, { income: 20 });
+    const [screen] = await Promise.all([host.context().waitForEvent('page'), host.getByRole('link', { name: 'Open big screen' }).click()]);
+    screen.on('pageerror', e => pageErrors.push(`screen: ${e.message}`));
+    await screen.emulateMedia({ reducedMotion: motion });
+    const bot = await botLaunches(baseURL!, code);
+    await host.getByRole('button', { name: /Make teams/ }).click();
+    await host.getByRole('button', { name: 'Start mission 1' }).click();
+    await expect(screen.locator('.bs-clock')).toBeVisible();
+    await launchSolo(bot);
+    const lift = screen.locator('#liftoffs .liftoff');
+    await expect(lift).toHaveCount(1);
+    await expect(lift).toContainText('launched');
+    const team = (await screen.locator('.bs-team b').first().innerText()).trim();
+    await expect(lift).toContainText(team);
+    const anim = await lift.evaluate(el => getComputedStyle(el).animationName);
+    expect(anim).toBe(motion === 'reduce' ? 'liftoff-still' : 'liftoff');
+    await expect(lift).toHaveCount(0, { timeout: 6000 });
+    await screen.reload();
+    await expect(screen.locator('.bs-team.done')).toHaveCount(1);
+    await screen.waitForTimeout(800);
+    await expect(screen.locator('#liftoffs .liftoff')).toHaveCount(0); // not replayed
+    bot.close();
+  });
+}
 
 test('the host link survives a reload and a wrong code gets a clear error', async ({ browser }) => {
   const { host, code } = await createGame(browser);
