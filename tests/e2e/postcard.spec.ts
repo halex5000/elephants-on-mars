@@ -3,6 +3,13 @@ import { readFile } from 'node:fs/promises';
 import { Client, join, playBot } from '../bot.js';
 import { E2E_PASSCODE } from './env.js';
 
+// Tests open their own browser contexts (one per player) and nothing closes them. Without this,
+// every earlier test's players stay connected and keep getting updates, so the suite slows down
+// as it grows and late tests time out under load.
+test.afterEach(async ({ browser }) => {
+  await Promise.all(browser.contexts().map(c => c.close()));
+});
+
 test('a landed passenger stays on the shared map and the host downloads the postcard', async ({ page, baseURL }) => {
   const host = new Client(baseURL!);
   await host.opened;
