@@ -8,7 +8,7 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 
 - **Merged today:** #4 N10 state snapshots (Dex), #3 N12 QR join (Claude), #5 N9 Copy results (Claude), #2 N11 50-team proposal (Dex), #1 Playwright bump (Dependabot).
 - **State:** `main` green in CI (types, unit, integration, load, e2e, CDK, container image).
-- **In flight:** Dex → N13 realistic load test. Claude → N7 `/screen/CODE`.
+- **In flight:** Dex → N13 realistic load test. Claude → Playwright 1.65 bump (replaces Dependabot #1).
 - **Next for Alex:** D1 deploy to Fly, then N1 playtest.
 - **Snapshots are opt-in:** `STATE_FILE` unset = memory only. To use on Fly, add a volume at `/data`, set `STATE_FILE=/data/rooms.json`, and check `ls -ld /data` once (should be owned by `node`).
 
@@ -27,7 +27,6 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 | N3 | Big-game fuel contention | In the 200-player load test, 50 engineers sharing one pool stretched the first mission past 4 minutes (later missions fine thanks to carried-over stock). Options: raise `FUEL.ratePerTeam`, raise the cap, or start each team with a little stock. |
 | N5 | Captain's "Restart" button | The original has one; what it does isn't shown. Ask someone who's played (Alex has played the original). |
 | N6 | Build and run the Docker image locally | `docker compose up --build` with OrbStack. Never built by a worker yet; Fly's remote builder or CI will be first. |
-| N7 | Separate big-screen URL for the projector (Claude) | e.g. `/screen/CODE`: read-only shared screen without host controls, so the host can screen-share it cleanly. |
 | N8 | Launch moment | One orchestrated animation when a team launches (rocket lift-off on the big screen). Respect reduced motion. |
 | N13 | Realistic load test (Dex) | Next step from `docs/scale-50-teams.md`: a bot that plays default rules ($10/mission across three buyers, 4-minute clock) and per-team metrics in `tests/load/` (time to first fuel buy, rocket retries, % landed at 4:00, action→view latency). Run at 2/25/50 teams and add the numbers to the doc. Decides whether N11 sectors are needed. |
 | N11 | 50-team play: market sectors + big screen | Proposal merged (`docs/scale-50-teams.md`). Waiting on N13's numbers before building. Pairs with N3. |
@@ -45,6 +44,7 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 
 ## Done
 
+- Big screen (N7): `/screen/CODE`, read-only projector view opened from the host page; screen sockets can't act (tested)
 - State snapshots (N10, Dex): opt-in `STATE_FILE`, restores rooms, seats and timers after a crash or restart
 - 50-team proposal (N11, Dex): `docs/scale-50-teams.md`
 - QR code to join (N12): big in the lobby, small tap-to-enlarge during play; e2e test decodes it and joins from a phone
