@@ -5,6 +5,7 @@
 //   Engineer  → the shared fuel pool, how much fuel the team has on board
 //   Captain   → money for everyone, what has been bought (names only), the launch button
 // Everyone (like the original's big screen) sees the public activity feed and results.
+import { missionReceipt } from './receipt.js';
 import { ANIMALS, ROCKETS, FUEL_SEND_STEP, animalById, rocketById } from './catalog.js';
 import { FUEL } from '../shared/market.js';
 import {
@@ -85,7 +86,7 @@ export function shared(g: Game, now: number, speed = 1): Shared {
     serverNow: now,
     settings: g.settings,
     speed,
-    results: o.rounds.map((row, i) => ({ round: i + 1, outcomes: row })),
+    results: o.rounds.map((row, i) => ({ round: i + 1, outcomes: row, receipt: missionReceipt(g, row) })),
     standings: o.standings,
     terraform: {
       points: o.groupPoints,

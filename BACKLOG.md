@@ -21,6 +21,9 @@ _Last updated 2026-11-19 by Dex._
 
 ## Next
 
+- **N15 · Mission Control receipts (Dex, in review).** Give the host one factual launch story at mission results, including last-second launches and the final purchase.
+- **N16 · Mars landing map (Dex, separate branch).** Build a shared animal map and downloadable host postcard.
+
 | #   | Item                                      | Notes                                                                                                                                                                                                                                               |
 | --- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | N2  | Tune the economy from the playtest        | All numbers live in `src/server/catalog.ts` and `src/shared/market.ts`. Economy guardrail tests in `tests/unit/engine.test.ts`.                                                                                                                     |

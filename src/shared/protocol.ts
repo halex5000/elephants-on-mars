@@ -62,6 +62,7 @@ export interface Standing {
   points: number;
 }
 export interface RoundSummary {
+  receipt?: string;
   round: number;
   outcomes: Outcome[];
 }
