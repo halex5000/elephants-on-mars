@@ -20,7 +20,27 @@ _Last updated 2026-11-19 by Dex. Replace this block when you hand off; don't pre
 | #   | Item                                                                                                                                                              | Owner | Status |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
 | N15 | Practice bots in the host lobby, team radio and human seat takeover | Dex | In review |
+| N19 | Sound effects (see below) | Dex | Ready |
+| N20 | Visual glow-up: style frames first, Alex picks a direction | Claude | Ready |
 | N1  | Playtest with real people (4–8 players, 2+ missions); write down what felt slow, confusing or unfair                                                              | Alex  | Ready  |
+
+
+### N19 · Sound effects (Dex)
+
+- **Synthesize with Web Audio**, no audio files. Nothing to license, nothing to download, tiny bundle. One `src/client/sound.ts` with a function per cue.
+- **Cues:** the last 5 seconds of an auction or mission (ticks), bid placed, outbid, won, purchase, launch (whoosh as the rocket rises), landing success, landing failure, mission results (short fanfare). Keep each under a second except launch and fanfare.
+- **Who hears what:** the projector (`/screen` and the host view) plays the room-wide cues, because the host shares that tab's audio on the call. Phones play only personal cues (your bid, outbid, your purchase) and quieter, so 8 phones in one room don't make a racket.
+- **Controls:** a mute button on every screen, remembered per device. Phones start muted until the first tap (browsers block audio before a gesture anyway). Host view is on by default.
+- **Don't** play sounds from hidden tabs, and don't stack the same cue more than once per 100 ms (a burst of bids shouldn't machine-gun).
+- **Tests:** unit-test which events map to which cue and who hears it. One e2e check that the mute toggle persists. The axe gate must stay green (the mute button needs a label).
+- **Effort:** Medium. Use High only for the "who hears what" event mapping if it gets tangled.
+
+### N20 · Visual glow-up (Claude, then split)
+
+1. Claude makes 2–3 style frames of the projector during play and the phone console. Same layout, different looks. Alex picks one.
+2. That direction turns into design tokens (color, type, motion) in the CSS, so most of it lands everywhere at once.
+3. Then split by screen: Claude takes the projector and market, Dex takes the phone consoles. Each in its own PR.
+4. **Must hold:** projector readable from the back of the room, compact mode (>10 teams), `prefers-reduced-motion`, axe gate green, phones fast on cell data.
 
 ## Next
 
