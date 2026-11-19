@@ -4,15 +4,13 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 
 ## Handoff note
 
-**N10 · Dex · 2026-11-19.** Optional periodic JSON checkpoints and timer restoration are ready for review. Recovery tests cover reconnects and deadlines. To enable on Fly, mount writable persistent storage and set `STATE_FILE`. The production configuration is unchanged.
+*Last updated 2026-11-19 by Claude. Replace this block when you hand off; don't prepend to it.*
 
-*Last updated 2026-11-19 by Claude.*
-
-- **Done this session:** architecture and scale review (see DECISIONS, 2026-11-19 entries). Added `HOST_PASSCODE` (server + client + tests), `fly.toml` (primary host) and `render.yaml`, and README deploy steps. Clean-folder build of the Docker steps passes. A real `docker build` still hasn't run (no daemon here); Fly's remote builder will be the first.
-- **Files changed:** `src/shared/protocol.ts`, `src/server/server.ts`, `src/server/index.ts`, `src/client/main.ts`, `tests/integration/game.test.ts`, `tests/e2e/game.spec.ts`, `tests/e2e/env.ts` (new), `playwright.config.ts`, `fly.toml` (new), `render.yaml` (new), `README.md`, `DECISIONS.md`, `BACKLOG.md`.
-- **State:** all suites green (79 unit, 19 integration, load, 12 e2e, 11 infra).
-- **Next up:** Alex deploys to Fly (D1), then the playtest (N1). Workers: N10 and N11 are ready to pick up.
-- **Now on git:** github.com/halex5000/elephants-on-mars (public, MIT). Work on a branch, open a PR, let CI go green. Don't commit to `main` directly. See AGENTS.md.
+- **Merged today:** #4 N10 state snapshots (Dex), #3 N12 QR join (Claude), #5 N9 Copy results (Claude), #2 N11 50-team proposal (Dex), #1 Playwright bump (Dependabot).
+- **State:** `main` green in CI (types, unit, integration, load, e2e, CDK, container image).
+- **In flight:** Dex → N13 realistic load test. Claude → N7 `/screen/CODE`.
+- **Next for Alex:** D1 deploy to Fly, then N1 playtest.
+- **Snapshots are opt-in:** `STATE_FILE` unset = memory only. To use on Fly, add a volume at `/data`, set `STATE_FILE=/data/rooms.json`, and check `ls -ld /data` once (should be owned by `node`).
 
 ## Now
 
@@ -29,10 +27,10 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 | N3 | Big-game fuel contention | In the 200-player load test, 50 engineers sharing one pool stretched the first mission past 4 minutes (later missions fine thanks to carried-over stock). Options: raise `FUEL.ratePerTeam`, raise the cap, or start each team with a little stock. |
 | N5 | Captain's "Restart" button | The original has one; what it does isn't shown. Ask someone who's played (Alex has played the original). |
 | N6 | Build and run the Docker image locally | `docker compose up --build` with OrbStack. Never built by a worker yet; Fly's remote builder or CI will be first. |
-| N7 | Separate big-screen URL for the projector | e.g. `/screen/CODE`: read-only shared screen without host controls, so the host can screen-share it cleanly. |
+| N7 | Separate big-screen URL for the projector (Claude) | e.g. `/screen/CODE`: read-only shared screen without host controls, so the host can screen-share it cleanly. |
 | N8 | Launch moment | One orchestrated animation when a team launches (rocket lift-off on the big screen). Respect reduced motion. |
-| N10 | State snapshots (Dex, in review) | Save game state every few seconds (file on Fly, or skip) and reload on boot, so a crash or redeploy doesn't end a live game. Clients already reconnect and resume. Touches `server.ts`. |
-| N11 | 50-team play: market sectors + big screen | Group teams into sectors of ~6–8 that share a market, or scale listings with team count. Big screen needs sector summaries / top 10 instead of 50 rows. Design doc first: `docs/scale-50-teams.md`. Pairs with N3. |
+| N13 | Realistic load test (Dex) | Next step from `docs/scale-50-teams.md`: a bot that plays default rules ($10/mission across three buyers, 4-minute clock) and per-team metrics in `tests/load/` (time to first fuel buy, rocket retries, % landed at 4:00, action→view latency). Run at 2/25/50 teams and add the numbers to the doc. Decides whether N11 sectors are needed. |
+| N11 | 50-team play: market sectors + big screen | Proposal merged (`docs/scale-50-teams.md`). Waiting on N13's numbers before building. Pairs with N3. |
 
 ## Later
 
@@ -47,6 +45,8 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 
 ## Done
 
+- State snapshots (N10, Dex): opt-in `STATE_FILE`, restores rooms, seats and timers after a crash or restart
+- 50-team proposal (N11, Dex): `docs/scale-50-teams.md`
 - QR code to join (N12): big in the lobby, small tap-to-enlarge during play; e2e test decodes it and joins from a phone
 - Export results (N9): Copy results on the final report, with a select-and-copy fallback; fixed panels snapping shut on screen updates
 - Git + public GitHub repo (MIT); employer names scrubbed from docs before going public
