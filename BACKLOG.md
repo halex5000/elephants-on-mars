@@ -10,6 +10,7 @@ _Last updated 2026-11-19 by Dex. Replace this block when you hand off; don't pre
 - **Quality gates are on (#14):** run `npm install` once to get the git hooks. Pre-commit = secret scan + Biome format/lint on staged files; pre-push = typecheck + unit. CI runs `npm run check`. Markdown isn't auto-formatted.
 - **N14 merged (#16):** A host can restore an offline seat to a connected, unseated newcomer during briefing, play or results. Match the join ID on the call. The returning tab keeps its login and the previous login expires. Covered by engine, WebSocket and phone-sized browser tests. Rehearse this once during N1.
 - **In flight:** Dex → **N15 practice bots** ready for review alongside N16 (Mars postcard, #20) and N17 (Mission Control receipts, #19). Rehearse one human and three Scouts during N1. Claude → L2 accessibility (#18), then **Captain "Take back $1"** (engine + Captain console).
+- **Crew wallets (Dex, in review):** Vet, Pilot and Engineer can return one unspent dollar to their Captain during a mission. Try a return from a phone during N1.
 - **Infra audit:** `minimatch` advisory in `/infra` is bundled inside `aws-cdk-lib` (npm overrides can't reach it), deploy-time tooling only. Upgrade CDK once a release includes the upstream fix, then rerun both audits.
 - **Next for Alex:** phone-on-cell-data smoke test on the live URL, then the playtest with `docs/playtest.md`.
 
