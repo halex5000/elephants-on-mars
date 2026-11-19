@@ -75,7 +75,7 @@ CI (`.github/workflows/ci.yml`) runs all of it, synthesizes the CDK app, and bui
 
 ## Deploy outside work (Fly.io or Render)
 
-For playing with friends: a public HTTPS URL, phones on cell data just work. Both configs run the same Dockerfile as one instance. **Game state lives in memory, so never run more than one instance, and don't deploy during an event** (a restart ends live games).
+For playing with friends: a public HTTPS URL, phones on cell data just work. Both configs run the same Dockerfile as one instance. **Game state lives in memory, so never run more than one instance, and don't deploy during an event** (the default configuration loses rooms on restart).
 
 Set `HOST_PASSCODE` on any public deploy. Only people with it can create games. Players never need it, and the browser remembers it after the first game.
 
@@ -135,9 +135,17 @@ npx cdk deploy \
 **Park it between games:** `npx cdk deploy -c desiredCount=0 ...` (or `aws ecs update-service --desired-count 0`). The ALB still costs a little while it exists; `npx cdk destroy` removes everything.
 
 **Things to know:**
-- A deploy or task restart ends any game in progress (state is in memory). Deploy between game nights.
+- The default task has ephemeral storage. Deploy between game nights or configure durable storage for checkpoints.
 - The deployment stops the old task before starting the new one, so there's a minute or two of downtime. That's deliberate: two tasks would split players into separate games.
 - Logs are JSON lines in CloudWatch: `game_created`, `player_joined`, `round_auto_ended`, `socket_error`.
+
+## Recovering active rooms
+
+Set `STATE_FILE` to a private path such as `/data/rooms.json` to enable checkpoints. Create the parent directory first and grant the container's `node` user write access. Keep it outside the public web directory. The file contains all room data, including host and player reconnect credentials. Store it on the server only and restrict access.
+
+One process writes all rooms every three seconds using an atomic file replacement and saves once more on graceful shutdown. On boot it restores unexpired rooms with the same join codes, seats and privileges. The original mission deadline still applies during downtime. Overdue missions open on their results screen. A hard crash can lose moves since the last completed write. A failed periodic write logs `snapshot_error` and is retried on the next interval. A malformed or unsupported snapshot stops startup so the file can be recovered.
+
+For Fly redeploys, attach a persistent Fly Volume in the machine's region, mount it at `/data`, ensure it is writable by the app, and set `STATE_FILE=/data/rooms.json`. A volume costs extra. A file in the machine's root filesystem can disappear on replacement. Keep exactly one machine attached. Leaving the variable unset preserves the default memory-only behavior.
 
 ## Server settings
 

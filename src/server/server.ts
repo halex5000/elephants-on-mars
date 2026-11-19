@@ -1,10 +1,11 @@
 // HTTP (static files + /healthz) and a WebSocket hub at /ws.
 // State lives in memory in this one process, which is why the AWS service runs exactly one task.
 import { createServer, type IncomingMessage, type ServerResponse, type Server } from 'node:http';
-import { readFile } from 'node:fs/promises';
-import { extname, join, normalize } from 'node:path';
+import { access, constants, readFile, realpath } from 'node:fs/promises';
+import { basename, dirname, extname, join, resolve, sep } from 'node:path';
 import { randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
+import { loadGames, saveGames } from './snapshots.js';
 import * as E from './engine.js';
 import { hostView, playerView, shared } from './views.js';
 import type { Action, ClientMsg, ServerMsg } from '../shared/protocol.js';
@@ -17,6 +18,7 @@ export interface ServerOptions {
   maxGames?: number; idleGameMs?: number; log?: (event: string, data?: Record<string, unknown>) => void;
   /** If set, creating a game requires this passcode. Players never need it. Use it on public hosts. */
   hostPasscode?: string;
+  stateFile?: string; snapshotIntervalMs?: number;
 }
 
 interface Conn { ws: WebSocket; code?: string; role?: 'host' | 'player'; playerId?: string; hits: number[]; alive: boolean; last?: string }
@@ -31,7 +33,7 @@ const PASSCODE_FAILS = { windowMs: 60_000, max: 20 };
 const safeEq = (a: string, b: string) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
 const token = () => randomBytes(18).toString('base64url');
 
-export function startServer(opts: ServerOptions): Promise<{ server: Server; url: string; port: number; close: () => Promise<void>; games: Map<string, E.Game> }> {
+export async function startServer(opts: ServerOptions): Promise<{ server: Server; url: string; port: number; close: () => Promise<void>; games: Map<string, E.Game> }> {
   const speed = opts.speed ?? 1;
   const now = opts.now ?? Date.now;
   const rng = opts.rng ?? Math.random;
@@ -41,6 +43,23 @@ export function startServer(opts: ServerOptions): Promise<{ server: Server; url:
   const passcode = opts.hostPasscode?.trim() || undefined;
   let passFails: number[] = [];
   const games = new Map<string, E.Game>();
+  const publicRoot = resolve(opts.publicDir);
+  const stateFile = opts.stateFile ? resolve(opts.stateFile) : undefined;
+  if (stateFile) {
+    const parent = await realpath(dirname(stateFile));
+    const target = join(parent, basename(stateFile));
+    const webRoot = await realpath(publicRoot).catch((err: NodeJS.ErrnoException) => {
+      if (err.code !== 'ENOENT') throw err;
+      return publicRoot;
+    });
+    if (target === webRoot || target.startsWith(webRoot + sep)) throw new Error('STATE_FILE must be outside the public directory');
+    await access(parent, constants.W_OK);
+    for (const game of await loadGames(stateFile)) {
+      if (now() - game.touchedAt > idleMs) continue;
+      if (game.phase === 'play' && game.endsAt !== null && game.endsAt <= now()) E.endRound(game);
+      games.set(game.code, game);
+    }
+  }
   const conns = new Set<Conn>();
   const timers = new Map<string, NodeJS.Timeout>();
 
@@ -51,8 +70,8 @@ export function startServer(opts: ServerOptions): Promise<{ server: Server; url:
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); res.end(); return; }
     let path = decodeURIComponent(url.pathname);
     if (path === '/' || !extname(path)) path = '/index.html'; // client-side routes (/host, /join) all serve the app
-    const file = normalize(join(opts.publicDir, path));
-    if (!file.startsWith(normalize(opts.publicDir))) { res.writeHead(403); res.end(); return; }
+    const file = resolve(join(publicRoot, path));
+    if (!file.startsWith(publicRoot + sep)) { res.writeHead(403); res.end(); return; }
     try {
       const body = await readFile(file);
       res.writeHead(200, {
@@ -251,14 +270,26 @@ export function startServer(opts: ServerOptions): Promise<{ server: Server; url:
     server.listen(opts.port ?? 3000, opts.host ?? '0.0.0.0', () => {
       const addr = server.address();
       const port = typeof addr === 'object' && addr ? addr.port : (opts.port ?? 3000);
+      for (const game of games.values()) schedule(game);
+      let writing: Promise<void> | undefined;
+      const checkpoint = stateFile ? setInterval(() => {
+        if (writing) return;
+        writing = saveGames(stateFile, games.values())
+          .catch(err => log('snapshot_error', { err: String(err) }))
+          .finally(() => { writing = undefined; });
+      }, opts.snapshotIntervalMs ?? 3000).unref() : undefined;
       log('listening', { port });
       resolve({
         server, port, url: `http://127.0.0.1:${port}`, games,
-        close: () => new Promise<void>(done => {
+        close: async () => {
+          clearInterval(checkpoint);
           clearInterval(sweep); timers.forEach(t => clearTimeout(t)); dirty.forEach(t => clearTimeout(t));
           for (const c of conns) c.ws.terminate();
-          wss.close(); server.close(() => done());
-        }),
+          wss.close();
+          await new Promise<void>(done => server.close(() => done()));
+          await writing;
+          if (stateFile) await saveGames(stateFile, games.values());
+        },
       });
     });
   });

@@ -17,14 +17,18 @@ const app = await startServer({
   port: Number(process.env.PORT ?? 3000),
   host: process.env.HOST ?? '0.0.0.0',
   publicDir,
+  stateFile: process.env.STATE_FILE,
   maxGames: Number(process.env.MAX_GAMES ?? 200),
   hostPasscode: process.env.HOST_PASSCODE,
 });
 console.log(JSON.stringify({ t: new Date().toISOString(), event: 'host_passcode', required: Boolean(process.env.HOST_PASSCODE?.trim()) }));
 
+let stopping = false;
 const shutdown = (sig: string) => {
+  if (stopping) return;
+  stopping = true;
   console.log(JSON.stringify({ t: new Date().toISOString(), event: 'shutdown', sig }));
-  app.close().then(() => process.exit(0));
+  app.close().then(() => process.exit(0)).catch(err => { console.error('Shutdown failed', err); process.exit(1); });
   setTimeout(() => process.exit(1), 10_000).unref();
 };
 process.on('SIGTERM', () => shutdown('SIGTERM'));
