@@ -33,7 +33,6 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 | N8 | Launch moment | One orchestrated animation when a team launches (rocket lift-off on the big screen). Respect reduced motion. |
 | N10 | State snapshots (Dex, in review) | Save game state every few seconds (file on Fly, or skip) and reload on boot, so a crash or redeploy doesn't end a live game. Clients already reconnect and resume. Touches `server.ts`. |
 | N11 | 50-team play: market sectors + big screen | Group teams into sectors of ~6–8 that share a market, or scale listings with team count. Big screen needs sector summaries / top 10 instead of 50 rows. Design doc first: `docs/scale-50-teams.md`. Pairs with N3. |
-| N9 | Export results | The original sends leaderboards and screenshots after the event. A "Copy results" / download of the final report. |
 
 ## Later
 
@@ -49,6 +48,7 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 ## Done
 
 - QR code to join (N12): big in the lobby, small tap-to-enlarge during play; e2e test decodes it and joins from a phone
+- Export results (N9): Copy results on the final report, with a select-and-copy fallback; fixed panels snapping shut on screen updates
 - Git + public GitHub repo (MIT); employer names scrubbed from docs before going public
 - Host passcode for public deploys; Fly.io and Render configs
 

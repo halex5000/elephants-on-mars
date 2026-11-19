@@ -269,6 +269,58 @@ test('the host link survives a reload and a wrong code gets a clear error', asyn
   await expect(p.locator('#toast')).toHaveText(/No game with that code/);
 });
 
+async function toFinalReport(browser: Browser) {
+  const { host, code } = await createGame(browser);
+  const p = await joinGame(browser, code, 'Solo');
+  await host.locator('#s-rnd').fill('1');
+  await host.getByRole('button', { name: /Make teams/ }).click();
+  await host.getByRole('button', { name: 'Start mission 1' }).click();
+  await host.getByRole('button', { name: /End mission now/ }).click();
+  await host.getByRole('button', { name: 'Show the final report' }).click();
+  await expect(host.locator('#winner')).toBeVisible();
+  return { host, p, code };
+}
+
+test('Copy results puts a readable report on the clipboard', async ({ browser }) => {
+  const { host, code } = await toFinalReport(browser);
+  await host.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await host.getByRole('button', { name: 'Copy results' }).click();
+  await expect(host.locator('#toast')).toHaveText(/Results copied/);
+  const text = await host.evaluate(() => navigator.clipboard.readText());
+  expect(text).toContain(`mission report (game ${code})`);
+  expect(text).toContain('No team landed an animal');
+  expect(text).toMatch(/Leaderboard\n1\. .+: 0 points/);
+  expect(text).toMatch(/Mission 1\n- .+: Never launched/);
+});
+
+test('without a clipboard, Copy results opens the text, selected and ready to copy', async ({ browser }) => {
+  const { host, code } = await toFinalReport(browser);
+  await host.evaluate(() => Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true }));
+  await host.getByRole('button', { name: 'Copy results' }).click();
+  const box = host.locator('#results-text');
+  await expect(box).toBeVisible();
+  await expect(box).toBeFocused();
+  expect(await box.evaluate((t: HTMLTextAreaElement) => t.value.slice(t.selectionStart, t.selectionEnd))).toContain(`game ${code}`);
+  // and it stays open through later screen updates
+  await host.waitForTimeout(1500);
+  await expect(box).toBeVisible();
+});
+
+test('regression: an opened panel stays open when the screen updates', async ({ browser }) => {
+  const { host, code } = await createGame(browser);
+  await joinGame(browser, code, 'First');
+  await host.getByRole('button', { name: /Make teams/ }).click();
+  const panel = host.locator('details', { hasText: 'Players (' });
+  await panel.locator('summary').click();
+  await expect(panel).toHaveAttribute('open', '');
+  const late = await (await browser.newContext()).newPage(); // joining re-renders the host's screen
+  await late.goto(`/join/${code}`);
+  await late.locator('#jname').fill('Latecomer');
+  await late.getByRole('button', { name: 'Join' }).click();
+  await expect(panel).toContainText('Players (2)');
+  await expect(panel).toHaveAttribute('open', '');
+});
+
 test('running out of time ends the mission and locks the console', async ({ browser }) => {
   const { host, code } = await createGame(browser, { minutes: 0.5 }); // 3 real seconds at 10x
   const p = await joinGame(browser, code, 'Solo');

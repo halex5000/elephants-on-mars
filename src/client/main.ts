@@ -6,6 +6,7 @@ import {
 } from '../shared/protocol.js';
 import { auctionPrice, fuelInPool } from '../shared/market.js';
 import { planet, rocket, paw, rocketGlyph, drop, qr } from './art.js';
+import { resultsText } from './export.js';
 
 const RI: Record<Role, { t: string; i: string; d: string }> = {
   captain: { t: 'Captain', i: '🧑‍✈️', d: 'You hold the money and the launch button. Send your crew what they need, and launch once the animal, rocket and fuel are all in.' },
@@ -37,7 +38,7 @@ const ui = {
   amt: {} as Record<string, string>, to: {} as Record<string, string>,
   set: { minutes: '4', income: '10', teamSize: '4', rounds: '6' } as Record<keyof Settings, string>,
   confirm: 0, busy: false, help: false,
-  pass: '', needPass: false, qrBig: false,
+  pass: '', needPass: false, qrBig: false, showResults: false,
 };
 const PASS_KEY = 'eom-host-pass';
 
@@ -144,6 +145,8 @@ function render() {
   next.innerHTML = page();
   morphdom($('#app')!, next, {
     onBeforeElUpdated(from, to) {
+      // a <details> someone opened or closed stays that way across server updates
+      if (from instanceof HTMLDetailsElement) (to as HTMLDetailsElement).open = from.open || (to as HTMLDetailsElement).open;
       if (from instanceof HTMLInputElement || from instanceof HTMLSelectElement || from instanceof HTMLTextAreaElement) {
         // never fight a control the player is actively using: keep its live value
         if (from === document.activeElement) {
@@ -348,6 +351,8 @@ function finalReport(v: HostView | PlayerView) {
 <p class="m0" style="margin-top:14px;font-size:20px"><b id="winner">${f.winner ? `${esc(f.winner)} wins with ${f.topPoints} points` : 'Mars is still waiting'}</b></p>${terraBar(v)}
 ${f.failed || f.scrubbed ? `<p class="sm m0" style="margin-top:8px;color:#ffd9c7">${[f.failed ? `${plural(f.failed, "rocket didn't", "rockets didn't")} make it` : '', f.scrubbed ? `${plural(f.scrubbed, 'mission', 'missions')} never launched` : ''].filter(Boolean).join(', and ')}.</p>` : ''}</div>
 <div class="lb">${f.byRound.map((t, i) => `<div class="r ${t.team === mine ? 'me' : ''}"><span class="rank">${i + 1}</span><span class="name">${esc(t.name)}</span><span class="zoo">${t.landed.map(a => a.emoji).join('')}</span><span class="num pts">${t.total}</span></div>`).join('')}</div></div></div>
+<div class="share row"><button data-act="copyResults">Copy results</button><span class="sm mut">Paste them in the meeting chat for the debrief.</span></div>
+<details class="panel share-text" ${ui.showResults ? 'open' : ''}><summary>Show results as text</summary><textarea id="results-text" readonly rows="12" aria-label="Results as text">${esc(resultsText(v))}</textarea></details>
 <div class="final-grid"><div class="panel debrief"><h3>Debrief questions</h3><ol><li>Which role felt the most in the dark? What did you wish someone had told you sooner?</li><li>When did your team's communication start to click, and what changed?</li><li>How did the shared markets change your plans? Did you wait for a better deal or buy fast?</li><li>Did anyone sit on money or information? Why?</li><li>What's one habit from this game you'd bring to a real project?</li></ol></div><div>${planet(v.terraform.pct)}</div></div>`;
 }
 
@@ -392,6 +397,13 @@ document.addEventListener('click', e => {
     case 'give': act({ a: 'transfer', from: 'captain', to: d.to as Role, amount: 1 }); break;
     case 'help': ui.help = !ui.help; render(); break;
     case 'qr': ui.qrBig = !ui.qrBig; render(); break;
+    case 'copyResults': {
+      const text = view ? resultsText(view) : '';
+      const fallback = () => { ui.showResults = true; render(); ui.showResults = false; const t = $<HTMLTextAreaElement>('#results-text'); t?.focus(); t?.select(); toast("Couldn't reach the clipboard. The results are selected below; copy them from there."); };
+      if (!navigator.clipboard?.writeText) { fallback(); break; }
+      navigator.clipboard.writeText(text).then(() => toast('Results copied. Paste them anywhere.'), fallback);
+      break;
+    }
     case 'launch':
       if (Date.now() - ui.confirm > 4000) { ui.confirm = Date.now(); render(); setTimeout(render, 4100); return; }
       ui.confirm = 0; act({ a: 'launch' }); toast('🚀 Launched! Results at the end of the mission.'); break;
