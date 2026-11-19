@@ -1,60 +1,54 @@
 # Working on Elephants on Mars
 
-Read this first, whoever you are (Claude, ChatGPT, Codex, or a human). Then read `BACKLOG.md` (what's next, and the latest handoff note) and `DECISIONS.md` (why things are the way they are).
+For any coding agent (Claude Code, Codex) or human. Read this first, then:
 
-## What this is
+- `docs/HANDOFF.md`: current status, open bugs, context that isn't in the code.
+- `docs/PRODUCT.md`: how the game works, what's shipped, what's planned.
+- `docs/ARCHITECTURE.md`: modules, data flow, conventions, limits.
+- `DECISIONS.md`: why things are the way they are. Read it before undoing a choice.
 
-A playable, faithful homage to MeetMax Games' _Elephants on Mars_, for Alex to run with friends and coworkers. Developed and tested locally on Alex's Mac, published on GitHub, hosted publicly on Fly.io for friends (`HOST_PASSCODE` set), with an optional internal AWS deploy at work where nothing may leave the corporate network. Details: `README.md`.
+## Who's who
 
-## The workers
+- **Alex** owns priorities and product calls (economy, rules, visual direction) and runs deploys.
+- **Claude Code ("C Note")** and **Codex ("Dex")** share engineering. Either can pick up any item.
 
-- **Alex** owns priorities and makes the calls in `BACKLOG.md` marked _Decision needed_.
-- **Claude**, **ChatGPT ("Chattie G")** and **Dex** are interchangeable workers. Either can pick up any item. When one runs out of capacity, the other continues from the handoff note.
+## Workflow (GitHub-centered)
 
-## Source of truth
-
-- **`main` on GitHub (github.com/halex5000/elephants-on-mars) is the source of truth.** Always start from the latest `main` (`git pull`), never from a copy you made earlier.
-- **One branch per backlog item** (`n10-state-snapshots`), small commits, then a pull request. CI must be green before merge. Never push to `main` directly or rewrite shared history.
-- Two workers can run at once as long as they're on different branches. If two items touch the same file, say so in the PR so whoever merges second rebases.
-- **This repo is public.** Never commit secrets, real account or VPC IDs, internal hostnames, or employer names. Deploy secrets live in the host (`fly secrets`, Render env vars), not in files.
+- **`main` on github.com/halex5000/elephants-on-mars is the source of truth.** Start every task from the latest `main`.
+- **Work items are GitHub Issues** once the backlog is migrated. Until then, `BACKLOG.md`, with the corrections listed in `docs/HANDOFF.md`. Assign yourself before you start.
+- **One branch per issue,** small commits, then a PR that links the issue. If two PRs touch the same file (especially `src/client/main.ts`), say so in the PR.
+- **Merge** your own PR once CI is green (Alex allows it), as a squash. Never push to `main` directly or rewrite shared history.
+- **Never deploy.** Deploys are manual (Actions → Deploy to Fly) and end every live game. Alex decides when.
 
 ## Commands
 
 ```bash
-npm install
-npm run build && npm start      # http://localhost:3000 (GAME_SPEED=5 to fast-forward the clock)
+npm install                     # also installs the git hooks
+npm run build && npm start      # http://localhost:3000   (GAME_SPEED=5 fast-forwards the clock)
 npm run typecheck
 npm run check                   # Biome lint + format check + secret scan (what CI runs)
-npm run format                  # fix formatting
 npm test                        # unit + integration
 npm run test:load               # 200 bots
 npm run test:e2e                # Playwright (npx playwright install chromium first)
 npm run infra:test              # CDK guardrails
 ```
 
-## Quality gates
+The hooks: pre-commit runs secretlint and Biome on staged files; pre-push runs typecheck and unit tests. Don't bypass them with `--no-verify`. If a hook is wrong, fix the hook.
 
-`npm install` sets up git hooks (via `simple-git-hooks`):
+## Rules
 
-- **pre-commit** (seconds): secret scan on staged files (`secretlint`), then Biome formats and lints them.
-- **pre-push** (~30 s): typecheck + unit tests.
+1. **Hidden information stays on the server.** Each viewer gets only its own slice (`src/server/views.ts`). Client code never imports `src/server/catalog.ts`. Never weaken `tests/unit/views.test.ts`.
+2. **One process, in-memory state.** Never run more than one instance. Any restart ends live games unless `STATE_FILE` is set.
+3. **Nothing loads from third parties.** No CDNs, remote fonts or analytics. The CSP in `server.ts` enforces it.
+4. **Faithful to the original.** Rules not shown in the original game's footage are marked _(guess)_ in the README. Don't present a guess as fact. Art is our own.
+5. **TypeScript only. AWS CDK for infrastructure. Biome for lint and format.**
+6. **Tests prove the change.** Fix bugs test-first, with a test that fails without the fix. Keep all suites green, including the axe accessibility gate.
+7. **Public repo:** never commit secrets, employer names, account or VPC IDs, or internal hostnames. Secrets live in the host (`fly secrets`).
+8. **Don't change game balance or rules on your own.** Numbers live in `catalog.ts` and `market.ts`; changing them is Alex's call.
 
-CI runs the same checks (`npm run check`) plus everything else, so it's the real gate. Hooks just catch problems earlier. Don't bypass them with `--no-verify`; if a hook is wrong, fix the hook. Biome replaces ESLint/Prettier here because `typescript-eslint` doesn't support TypeScript 7 yet.
+## Before you hand off
 
-## Rules that keep the game honest
-
-1. **Hidden information lives on the server.** Each role may only receive its own slice (`src/server/views.ts`). Game data (`src/server/catalog.ts`) must never be imported by client code. `tests/unit/views.test.ts` enforces this; never weaken those tests to make something pass.
-2. **Nothing leaves the network.** The page loads nothing from outside the server: no CDNs, Google Fonts, analytics or remote images. The content security policy in `src/server/server.ts` enforces it.
-3. **One server process, in-memory state.** Never run more than one task (the CDK stack refuses).
-4. **Faithful to the original.** Rules come from the original game's video and footage where known. Anything guessed is marked _(guess)_ in `README.md`. Don't present a guess as fact.
-5. **TypeScript only. AWS CDK for infrastructure.**
-6. **Tests prove the change.** Fix a bug by first writing a test that fails without the fix. All suites must be green before a handoff.
-
-## Handoff checklist
-
-Before you stop (or when you're about to run out of capacity):
-
-1. Run the suites you touched; note anything not run.
-2. Update `BACKLOG.md`: move items, set owner/status, and rewrite the **Handoff note** at the top (what you did, what's half-done, what to do next, anything surprising).
+1. Run the suites you touched and say which ones you didn't run.
+2. Update the issue (or `BACKLOG.md`): status, what's half-done, what's next.
 3. Add to `DECISIONS.md` if you made a choice someone might otherwise undo.
-4. Commit with a message naming the backlog item, push your branch, and open a PR (or say in the handoff note why you didn't).
+4. Update `docs/HANDOFF.md` only for cross-cutting context that doesn't belong in a single issue.
