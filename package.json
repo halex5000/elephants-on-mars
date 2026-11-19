@@ -17,7 +17,7 @@
     "infra:synth": "npm --prefix infra run synth",
     "lint": "biome lint .",
     "format": "biome format --write .",
-    "check": "biome ci . && npm run secrets",
+    "check": "biome ci --error-on-warnings . && npm run secrets",
     "secrets": "secretlint \"**/*\"",
     "prepare": "git rev-parse --git-dir >/dev/null 2>&1 && simple-git-hooks || true"
   },
@@ -54,6 +54,6 @@
   },
   "lint-staged": {
     "*": "secretlint",
-    "*.{ts,mjs,js,json,css,html}": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true"
+    "*.{ts,mjs,js,json,css,html}": "biome check --write --error-on-warnings --no-errors-on-unmatched --files-ignore-unknown=true"
   }
 }
