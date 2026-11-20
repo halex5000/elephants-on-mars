@@ -974,6 +974,12 @@ body.projector .sound {
   padding: 8px 10px;
   border: 1px solid var(--line);
 }
+.team-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
 .bs-team b {
   font-size: 14px;
 }
@@ -1318,8 +1324,96 @@ button.qrbox:focus-visible {
 body.projector .mast {
   display: none;
 }
-.projector .wrap {
-  max-width: 1400px;
+body.projector .wrap {
+  max-width: none;
+}
+body.projector .band {
+  padding: 20px 32px;
+}
+body.projector .bigscreen {
+  min-height: calc(100vh - 150px);
+}
+body.projector .bs-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+  padding: 32px 36px;
+}
+body.projector .bs-clock .num {
+  font-size: 104px;
+}
+body.projector .bs-clock small,
+body.projector .bs-pool .sm,
+body.projector .bs-stat small {
+  font-size: 22px;
+}
+body.projector .bs-pool .num {
+  font-size: 40px;
+}
+body.projector .bs-feed {
+  max-width: 760px;
+  gap: 8px;
+}
+body.projector .bs-feed div {
+  font-size: 24px;
+  line-height: 1.3;
+  padding: 8px 14px;
+}
+body.projector .bs-feed .sw {
+  width: 16px;
+  height: 16px;
+}
+body.projector .bs-stats h3 {
+  font-size: 44px;
+}
+body.projector .bs-stat .num {
+  font-size: 64px;
+}
+body.projector .bs-teams {
+  margin-top: 24px;
+  gap: 12px;
+  padding: 0 36px 28px;
+}
+body.projector .bs-team {
+  padding: 12px 16px;
+  gap: 12px;
+}
+body.projector .bs-team b {
+  font-size: 24px;
+}
+body.projector .bs-team .mini {
+  gap: 6px;
+}
+body.projector .bs-team .mini span {
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+}
+body.projector .screen-join .code {
+  font-size: 44px;
+}
+body.projector .screen-join .sm {
+  font-size: 22px;
+}
+body.projector .qrbox.mini {
+  width: 96px;
+}
+body.projector .projected-ranking h3 {
+  font-size: 32px;
+}
+body.projector .projected-ranking li {
+  font-size: 24px;
+}
+body.projector .team-swatch {
+  width: 16px;
+  height: 16px;
+}
+body.projector .projected-ranking summary {
+  font-size: 22px;
+}
+/* Keep the existing stacked board on narrow projector windows. */
+@media (max-width: 760px) {
+  body.projector .bs-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .screen-lobby {
   display: grid;

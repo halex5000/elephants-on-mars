@@ -566,7 +566,7 @@ ${v.fuel ? `<div class="bs-pool"><span class="num" ${poolAttrs(v.fuel)}>0</span>
       .join('') || '<div>Waiting for the first move…</div>'
   }</div></div>
 <div class="bs-stats"><h3>Mission ${v.round} of ${v.totalRounds}</h3><div class="bs-stat">${compact ? `<span class="num">${v.stats.launched} of ${v.stats.teams} <small>launched</small></span>` : `<span class="num">${progress}%</span><small>launched</small>`}</div><div class="bs-stat"><span class="num">$${v.stats.distributed}</span><small>distributed</small></div><div class="bs-stat"><span class="num">$${v.stats.spent}</span><small>spent</small></div></div></div>
-${compact ? projectedRanking(v) : `<div class="bs-teams">${v.teams.map(t => `<div class="bs-team ${t.status.launched ? 'done' : ''}"><span class="sw" style="width:10px;height:10px;border-radius:3px;background:${teamColor(t.name, names)}"></span><b>${esc(t.name)}</b><span class="mini">${mini(t.status.animal, '🐾', 'animal')}${mini(t.status.rocket, '🚀', 'rocket')}${mini(t.status.fuel, '💧', 'fuel')}${mini(t.status.launched, '🔥', 'launched')}</span></div>`).join('')}</div>`}</div>`;
+${compact ? projectedRanking(v) : `<div class="bs-teams">${v.teams.map(t => `<div class="bs-team ${t.status.launched ? 'done' : ''}"><span class="sw team-swatch" style="background:${teamColor(t.name, names)}"></span><b>${esc(t.name)}</b><span class="mini">${mini(t.status.animal, '🐾', 'animal')}${mini(t.status.rocket, '🚀', 'rocket')}${mini(t.status.fuel, '💧', 'fuel')}${mini(t.status.launched, '🔥', 'launched')}</span></div>`).join('')}</div>`}</div>`;
 }
 
 /* ---------- player ---------- */
