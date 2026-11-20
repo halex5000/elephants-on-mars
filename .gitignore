@@ -7,4 +7,6 @@ infra/cdk.context.json
 *.log
 .env
 .env.*
+.claude/settings.local.json
+CLAUDE.local.md
 .DS_Store

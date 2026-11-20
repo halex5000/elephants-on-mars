@@ -1,0 +1,170 @@
+{
+  "defaultMode": "acceptEdits",
+  "permissions": {
+    "allow": [
+      "Bash(npm ci)",
+      "Bash(npm run build)",
+      "Bash(npm run check)",
+      "Bash(npm run typecheck)",
+      "Bash(npm test)",
+      "Bash(npm run test:unit)",
+      "Bash(npm run test:integration)",
+      "Bash(npm run test:load)",
+      "Bash(npm run test:e2e)",
+      "Bash(npm run test:all)",
+      "Bash(npm run infra:test)",
+      "Bash(npm run infra:synth)",
+      "Bash(npm start)",
+      "Bash(npm run dev)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git branch --show-current)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push origin *)",
+      "Bash(gh issue view *)",
+      "Bash(gh issue comment *)",
+      "Bash(gh issue edit *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr edit *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh project item-edit *)",
+      "Bash(gh pr merge *--auto*--squash*)",
+      "Bash(gh pr merge *--squash*--auto*)"
+    ],
+    "ask": [
+      "Edit(./AGENTS.md)",
+      "Edit(./.github/workflows/**)",
+      "Edit(./infra/**)",
+      "Edit(./.claude/**)",
+      "Edit(./.codex/**)",
+      "Edit(./package.json)",
+      "Edit(./package-lock.json)",
+      "Edit(./fly.toml)",
+      "Edit(./render.yaml)",
+      "Bash(git push --force*)",
+      "Bash(git push *--force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(gh api *)",
+      "Bash(gh ruleset *)",
+      "Bash(gh repo edit *)",
+      "Bash(gh pr merge *--admin*)",
+      "Bash(gh pr merge --admin*)",
+      "Bash(gh secret set *)",
+      "Bash(gh variable set *)",
+      "Bash(aws *)",
+      "Bash(fly secrets *)",
+      "Bash(fly deploy *)",
+      "Bash(fly scale *)",
+      "Bash(fly volumes *)",
+      "Bash(npx cdk deploy *)",
+      "Bash(npx cdk destroy *)",
+      "Bash(npm publish *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/.env)",
+      "Read(./**/.env.*)",
+      "Read(./infra/cdk.context.json)",
+      "Edit(./.env*)",
+      "Bash(gh auth token*)",
+      "Bash(printenv*)",
+      "Bash(git push origin main*)",
+      "Bash(git push *:main*)",
+      "Bash(git push --mirror*)",
+      "Bash(git push *--mirror*)",
+      "Bash(git push --all*)",
+      "Bash(claude --dangerously-skip-permissions*)",
+      "Bash(codex --dangerously-bypass-approvals-and-sandbox*)"
+    ],
+    "disableBypassPermissionsMode": "disable"
+  },
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false,
+    "autoAllowBashIfSandboxed": true,
+    "credentials": {
+      "files": [
+        {
+          "path": "~/.aws/credentials",
+          "mode": "deny"
+        },
+        {
+          "path": "~/.aws/config",
+          "mode": "deny"
+        },
+        {
+          "path": "~/.ssh",
+          "mode": "deny"
+        },
+        {
+          "path": "~/.npmrc",
+          "mode": "deny"
+        }
+      ],
+      "envVars": [
+        {
+          "name": "AWS_ACCESS_KEY_ID",
+          "mode": "deny"
+        },
+        {
+          "name": "AWS_SECRET_ACCESS_KEY",
+          "mode": "deny"
+        },
+        {
+          "name": "AWS_SESSION_TOKEN",
+          "mode": "deny"
+        },
+        {
+          "name": "FLY_API_TOKEN",
+          "mode": "deny"
+        },
+        {
+          "name": "HOST_PASSCODE",
+          "mode": "deny"
+        },
+        {
+          "name": "NPM_TOKEN",
+          "mode": "deny"
+        },
+        {
+          "name": "OPENAI_API_KEY",
+          "mode": "deny"
+        },
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "mode": "deny"
+        },
+        {
+          "name": "GH_TOKEN",
+          "mode": "deny"
+        },
+        {
+          "name": "GITHUB_TOKEN",
+          "mode": "deny"
+        }
+      ]
+    },
+    "filesystem": {
+      "denyRead": ["**/.env", "**/.env.*", "infra/cdk.context.json", "~/.aws/**", "~/.ssh/**"]
+    },
+    "network": {
+      "allowedDomains": [
+        "127.0.0.1",
+        "localhost",
+        "github.com",
+        "api.github.com",
+        "registry.npmjs.org",
+        "cdn.playwright.dev",
+        "playwright.download.prss.microsoft.com"
+      ]
+    }
+  }
+}

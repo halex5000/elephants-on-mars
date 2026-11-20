@@ -1,0 +1,38 @@
+approval_policy = "on-request"
+approvals_reviewer = "user"
+default_permissions = "eom-worktree"
+
+[features]
+network_proxy = true
+
+[shell_environment_policy]
+ignore_default_excludes = false
+
+[shell_environment_policy.filters]
+"HOST_PASSCODE" = "exclude"
+
+[permissions.eom-worktree]
+description = "Issue worktree edits with restricted secrets and network access"
+extends = ":workspace"
+
+[permissions.eom-worktree.filesystem]
+"~/.aws" = "deny"
+"~/.ssh" = "deny"
+"~/.npmrc" = "deny"
+
+[permissions.eom-worktree.filesystem.":workspace_roots"]
+"**/.env" = "deny"
+"**/.env.*" = "deny"
+"**/*.env" = "deny"
+"infra/cdk.context.json" = "deny"
+
+[permissions.eom-worktree.network]
+enabled = true
+
+[permissions.eom-worktree.network.domains]
+"127.0.0.1" = "allow"
+"github.com" = "allow"
+"api.github.com" = "allow"
+"registry.npmjs.org" = "allow"
+"cdn.playwright.dev" = "allow"
+"playwright.download.prss.microsoft.com" = "allow"

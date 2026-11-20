@@ -1,0 +1,374 @@
+prefix_rule(
+    pattern = ["git", "status"],
+    decision = "allow",
+    justification = "Inspecting issue-worktree state is routine.",
+    match = ["git status --short --branch"],
+)
+
+prefix_rule(
+    pattern = ["git", "diff"],
+    decision = "allow",
+    justification = "Reviewing issue-worktree changes is routine.",
+    match = ["git diff --check"],
+)
+
+prefix_rule(
+    pattern = ["git", "log"],
+    decision = "allow",
+    justification = "Reviewing issue-branch history is routine.",
+    match = ["git log --oneline -5"],
+)
+
+prefix_rule(
+    pattern = ["git", "fetch", "origin"],
+    decision = "allow",
+    justification = "Fetching current repository history is routine.",
+    match = ["git fetch origin main"],
+)
+
+prefix_rule(
+    pattern = ["npm", "ci"],
+    decision = "allow",
+    justification = "Installing dependencies from the committed lockfile is pre-authorized.",
+    match = ["npm ci"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "build"],
+    decision = "allow",
+    justification = "Building the project is pre-authorized.",
+    match = ["npm run build"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "typecheck"],
+    decision = "allow",
+    justification = "Running the typecheck is pre-authorized.",
+    match = ["npm run typecheck"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "check"],
+    decision = "allow",
+    justification = "Running lint, format, and secret checks is pre-authorized.",
+    match = ["npm run check"],
+)
+
+prefix_rule(
+    pattern = ["npm", "test"],
+    decision = "allow",
+    justification = "Running unit and integration tests is pre-authorized.",
+    match = ["npm test"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "test:unit"],
+    decision = "allow",
+    justification = "Running unit tests is pre-authorized.",
+    match = ["npm run test:unit"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "test:integration"],
+    decision = "allow",
+    justification = "Running integration tests is pre-authorized.",
+    match = ["npm run test:integration"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "test:load"],
+    decision = "allow",
+    justification = "Running the load test is pre-authorized.",
+    match = ["npm run test:load"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "test:e2e"],
+    decision = "allow",
+    justification = "Running browser tests is pre-authorized.",
+    match = ["npm run test:e2e"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "test:all"],
+    decision = "allow",
+    justification = "Running the complete automated test suite is pre-authorized.",
+    match = ["npm run test:all"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "infra:test"],
+    decision = "allow",
+    justification = "Running infrastructure guardrail tests is pre-authorized.",
+    match = ["npm run infra:test"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "infra:synth"],
+    decision = "allow",
+    justification = "Synthesizing infrastructure templates locally is pre-authorized.",
+    match = ["npm run infra:synth"],
+)
+
+prefix_rule(
+    pattern = ["npm", "start"],
+    decision = "allow",
+    justification = "Running the local server is pre-authorized.",
+    match = ["npm start"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "dev"],
+    decision = "allow",
+    justification = "Running the local development server is pre-authorized.",
+    match = ["npm run dev"],
+)
+
+prefix_rule(
+    pattern = ["npx", "playwright", "install", "chromium"],
+    decision = "allow",
+    justification = "Installing the browser required by the project's E2E tests is pre-authorized.",
+    match = ["npx playwright install chromium"],
+)
+
+prefix_rule(
+    pattern = ["git", "add"],
+    decision = "allow",
+    justification = "Staging issue-scoped changes is pre-authorized.",
+    match = ["git add src/client/main.ts"],
+)
+
+prefix_rule(
+    pattern = ["git", "commit"],
+    decision = "allow",
+    justification = "Commits on the assigned issue branch are pre-authorized.",
+    match = ["git commit -m issue-scoped-change"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", "origin", "main"],
+    decision = "forbidden",
+    justification = "Never push to main; use an issue branch and PR.",
+    match = ["git push origin main"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", "origin"],
+    decision = "allow",
+    justification = "Pushes to the assigned origin branch are pre-authorized; GitHub protects main.",
+    match = ["git push origin issue-123-feature"],
+)
+
+prefix_rule(
+    pattern = ["gh", "issue", "view"],
+    decision = "allow",
+    justification = "Issue reads are part of the assigned workflow.",
+    match = ["gh issue view 46 --repo halex5000/elephants-on-mars"],
+)
+
+prefix_rule(
+    pattern = ["gh", "issue", "comment"],
+    decision = "allow",
+    justification = "Issue progress comments are pre-authorized.",
+    match = ["gh issue comment 46 --body progress"],
+)
+
+prefix_rule(
+    pattern = ["gh", "issue", "edit"],
+    decision = "allow",
+    justification = "Updating an issue claim or status is pre-authorized.",
+    match = ["gh issue edit 46 --add-label status:in-progress"],
+)
+
+prefix_rule(
+    pattern = ["gh", "pr", "merge", "--auto", "--squash", "--admin"],
+    decision = "forbidden",
+    justification = "Never bypass required checks or approval gates.",
+    match = ["gh pr merge --auto --squash --admin"],
+)
+
+prefix_rule(
+    pattern = ["gh", "pr", "merge", "--auto", "--squash"],
+    decision = "allow",
+    justification = "Routine merges may be queued only through CI-gated squash auto-merge.",
+    match = ["gh pr merge --auto --squash"],
+)
+
+prefix_rule(
+    pattern = ["gh", "pr", "create"],
+    decision = "allow",
+    justification = "Creating the issue-linked PR is pre-authorized.",
+    match = ["gh pr create --title issue-change --body Closes #46"],
+)
+
+prefix_rule(
+    pattern = ["gh", "pr", "edit"],
+    decision = "allow",
+    justification = "Updating the issue-linked PR is pre-authorized.",
+    match = ["gh pr edit 46 --body update"],
+)
+
+prefix_rule(
+    pattern = ["gh", "pr", "view"],
+    decision = "allow",
+    justification = "PR reads are part of the assigned workflow.",
+    match = ["gh pr view 46"],
+)
+
+prefix_rule(
+    pattern = ["gh", "pr", "checks"],
+    decision = "allow",
+    justification = "Checking required PR status is pre-authorized.",
+    match = ["gh pr checks 46"],
+)
+
+prefix_rule(
+    pattern = ["gh", "pr", "diff"],
+    decision = "allow",
+    justification = "Reviewing the issue PR diff is pre-authorized.",
+    match = ["gh pr diff 46"],
+)
+
+prefix_rule(
+    pattern = ["gh", "project", "item-edit"],
+    decision = "allow",
+    justification = "Updating the issue's Project status is pre-authorized.",
+    match = ["gh project item-edit --id PVTI_example"],
+)
+
+prefix_rule(
+    pattern = ["gh", "auth", "token"],
+    decision = "forbidden",
+    justification = "Never print GitHub credentials; use gh issue and gh pr commands directly.",
+    match = ["gh auth token"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", "origin", "--force"],
+    decision = "prompt",
+    justification = "Force pushes require explicit human approval; prefer a normal push.",
+    match = ["git push origin --force issue-123-feature"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", "origin", "--force-with-lease"],
+    decision = "prompt",
+    justification = "Force pushes require explicit human approval; prefer a normal push.",
+    match = ["git push origin --force-with-lease issue-123-feature"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", "origin", "-f"],
+    decision = "prompt",
+    justification = "Force pushes require explicit human approval; prefer a normal push.",
+    match = ["git push origin -f issue-123-feature"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", "--force"],
+    decision = "prompt",
+    justification = "Force pushes require explicit human approval; prefer a normal push.",
+    match = ["git push --force origin issue-46-cli-autonomy"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", "--force-with-lease"],
+    decision = "prompt",
+    justification = "Force pushes require explicit human approval; prefer a normal push.",
+    match = ["git push --force-with-lease origin issue-46-cli-autonomy"],
+)
+
+prefix_rule(
+    pattern = ["git", "reset", "--hard"],
+    decision = "prompt",
+    justification = "Destructive worktree changes require explicit human approval.",
+    match = ["git reset --hard HEAD"],
+)
+
+prefix_rule(
+    pattern = ["git", "clean", "-fd"],
+    decision = "prompt",
+    justification = "Deleting untracked worktree files requires explicit human approval.",
+    match = ["git clean -fd"],
+)
+
+prefix_rule(
+    pattern = ["fly", "deploy"],
+    decision = "prompt",
+    justification = "Production deployment is Alex's decision.",
+    match = ["fly deploy"],
+)
+
+prefix_rule(
+    pattern = ["fly", "secrets"],
+    decision = "prompt",
+    justification = "Production secrets require explicit human approval.",
+    match = ["fly secrets set HOST_PASSCODE=example"],
+)
+
+prefix_rule(
+    pattern = ["gh", "repo", "edit"],
+    decision = "prompt",
+    justification = "Repository settings require explicit human approval.",
+    match = ["gh repo edit halex5000/elephants-on-mars --enable-wiki=false"],
+)
+
+prefix_rule(
+    pattern = ["gh", "ruleset"],
+    decision = "prompt",
+    justification = "Repository rulesets require explicit human approval.",
+    match = ["gh ruleset edit 1 --repo halex5000/elephants-on-mars"],
+)
+
+prefix_rule(
+    pattern = ["aws"],
+    decision = "prompt",
+    justification = "Cloud infrastructure and production resources require explicit human approval.",
+    match = ["aws cloudformation deploy --template-file template.yaml --stack-name example"],
+)
+
+prefix_rule(
+    pattern = ["fly", "scale"],
+    decision = "prompt",
+    justification = "Production resource configuration requires explicit human approval.",
+    match = ["fly scale count 2"],
+)
+
+prefix_rule(
+    pattern = ["npx", "cdk", "deploy"],
+    decision = "prompt",
+    justification = "Infrastructure changes require explicit human approval.",
+    match = ["npx cdk deploy"],
+)
+
+prefix_rule(
+    pattern = ["npx", "cdk", "destroy"],
+    decision = "prompt",
+    justification = "Destructive infrastructure changes require explicit human approval.",
+    match = ["npx cdk destroy"],
+)
+
+prefix_rule(
+    pattern = ["gh", "api", "--method", ["PUT", "PATCH", "DELETE"]],
+    decision = "prompt",
+    justification = "Repository and branch protection settings require explicit human approval.",
+    match = [
+        "gh api --method PUT repos/halex5000/elephants-on-mars/branches/main/protection",
+        "gh api --method PATCH repos/halex5000/elephants-on-mars",
+        "gh api --method DELETE repos/halex5000/elephants-on-mars/rulesets/1",
+    ],
+)
+
+prefix_rule(
+    pattern = ["gh", "secret", "set"],
+    decision = "prompt",
+    justification = "Changing GitHub secrets requires explicit human approval.",
+    match = ["gh secret set FLY_API_TOKEN"],
+)
+
+prefix_rule(
+    pattern = ["gh", "variable", "set"],
+    decision = "prompt",
+    justification = "Changing GitHub configuration requires explicit human approval.",
+    match = ["gh variable set DEPLOY_ENV"],
+)

@@ -24,6 +24,15 @@ For any coding agent (Claude Code, Codex) or human. Read this first, then:
 - Linked issues close on successful merge; the Project's close/merge workflows move them to **Done**.
 - **Never deploy.** Deploys are manual (Actions → Deploy to Fly) and end every live game. Alex decides when.
 
+## Agent autonomy
+
+- Implement each claimed issue in its own branch and Git worktree. The shared `main` checkout is for fetching and worktree administration only; never edit or install dependencies there.
+- Follow `docs/agent-worktrees.md` for issue startup, CLI initialization, local runtime isolation, and safe cleanup.
+- Routine implementation, dependency installation from the lockfile, tests, commits, branch pushes, and PR updates are pre-authorized. Do not ask about routine technical choices; record meaningful ones in the PR.
+- Never copy `.env`, CDK context, tokens, credentials, or `node_modules` between worktrees. Keep dev servers on `127.0.0.1` with an issue-specific port; do not share snapshot files or runtime state.
+- Stop and document a blocker before changing production secrets, billing, infrastructure, branch protection or required checks, doing destructive data work, force-pushing, merging outside the CI/auto-merge policy, deploying, or making a substantial gameplay decision. Continue unrelated safe work where practical.
+- Create a follow-up issue for unrelated discoveries instead of expanding scope. Never use a CLI permission-bypass mode or work around a denied action.
+
 ## Commands
 
 ```bash
