@@ -4,6 +4,7 @@
 // Phones carry only quieter personal cues about their own team, so a room full of phones never
 // echoes the projector. The mapping from game events to cues is pure and tested; only `play` touches Web Audio.
 import type { HostView, PlayerView } from '../shared/protocol.js';
+import { type GameEvent, eventsBetween } from './transitions.js';
 
 export type Audience = 'room' | 'personal';
 export type Cue = 'tick' | 'bid' | 'outbid' | 'won' | 'purchase' | 'launch' | 'landed' | 'failed' | 'results';
@@ -66,14 +67,19 @@ export const CUES: Record<Cue, Voice[]> = {
 export const cueLength = (c: Cue) => Math.max(...CUES[c].map(v => v.at + v.dur));
 
 /* ---------- game events -> cues (pure) ---------- */
-type View = HostView | PlayerView;
-const feedKey = (f: { at: number; teamName: string; text: string }) => `${f.at}|${f.teamName}|${f.text}`;
-
-/** Cues for a successful or failed landing, in the order a person should hear them. */
-function landingCues(statuses: string[]): Cue[] {
+/** The cues a person should hear for these events, in order. A landing is heard before the results fanfare. */
+export function cuesForEvents(events: GameEvent[]): Cue[] {
   const out: Cue[] = [];
-  if (statuses.includes('landed')) out.push('landed');
-  if (statuses.some(s => s !== 'landed')) out.push('failed');
+  for (const e of events) {
+    if (e.type === 'purchase') out.push('purchase');
+    else if (e.type === 'team-purchase') out.push('won');
+    else if (e.type === 'launch') out.push('launch');
+    else {
+      if (e.landed) out.push('landed');
+      if (e.audience === 'room' ? e.failed : e.landed === false) out.push('failed');
+      out.push('results');
+    }
+  }
   return out;
 }
 
@@ -82,38 +88,8 @@ function landingCues(statuses: string[]): Cue[] {
  * First view, or a different game: nothing (a reload or late join must not replay history).
  * Bids and outbids aren't here: they come from this player's own actions and the server's refusals.
  */
-export function cuesBetween(prev: View | null, next: View): Cue[] {
-  if (!prev || prev.code !== next.code || prev.kind !== next.kind) return [];
-  const out: Cue[] = [];
-  const newResult = next.results.length > prev.results.length ? next.results[next.results.length - 1] : undefined;
-
-  if (next.kind === 'host' && prev.kind === 'host') {
-    if (next.phase === 'play' && prev.round === next.round) {
-      const seen = new Set(prev.feed.map(feedKey));
-      if (next.feed.some(f => f.kind !== 'launch' && !seen.has(feedKey(f)))) out.push('purchase');
-      const before = new Set(prev.teams.filter(t => t.status.launched).map(t => t.id));
-      if (next.teams.some(t => t.status.launched && !before.has(t.id))) out.push('launch');
-    }
-    if (newResult) out.push(...landingCues(newResult.outcomes.map(o => o.status)), 'results');
-  } else if (next.kind === 'player' && prev.kind === 'player') {
-    const was = prev.team,
-      now = next.team;
-    if (was && now && was.id === now.id && prev.round === next.round) {
-      const c = next.console,
-        p = prev.console;
-      const bought = (c?.vet?.bought && c.vet.bought !== p?.vet?.bought) || (c?.pilot?.bought && c.pilot.bought !== p?.pilot?.bought);
-      const fuel = (c?.engineer?.stock ?? 0) > (p?.engineer?.stock ?? 0);
-      if (bought || fuel) out.push('won');
-      if (now.status.launched && !was.status.launched) out.push('launch');
-    }
-    if (newResult && now) {
-      const mine = newResult.outcomes.find(o => o.team === now.id);
-      if (mine) out.push(...landingCues([mine.status]));
-      out.push('results');
-    }
-  }
-  return out;
-}
+export const cuesBetween = (prev: HostView | PlayerView | null, next: HostView | PlayerView): Cue[] =>
+  cuesForEvents(eventsBetween(prev, next));
 
 /** The mission clock: one tick per second for the last five seconds, once each. */
 export function tickFor(secsLeft: number, lastTicked: number): Cue | null {
