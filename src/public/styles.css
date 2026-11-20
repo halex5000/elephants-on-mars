@@ -39,13 +39,22 @@
   src: url(/fonts/nunito-sans-latin-800-normal.woff2) format("woff2");
 }
 :root {
-  --sky: #070a1a;
-  --sky2: #0e1430;
-  --ink: #f4f1ff;
-  --mut: #a9a6c8;
-  --line: rgba(255, 255, 255, 0.12);
-  --glass: rgba(255, 255, 255, 0.06);
-  --glass2: rgba(255, 255, 255, 0.1);
+  /* Direction A · Mission Control (DECISIONS.md, 2026-11-19): flat, opaque, one amber "live" accent. */
+  --sky: #040714;
+  --sky2: #071029;
+  --ink: #f2f4ff;
+  --mut: #a7aed0;
+  --line: rgba(160, 175, 255, 0.18);
+  /* Panel surfaces: opaque steps, darkest to lightest. */
+  --glass: #0b1128;
+  --glass2: #10183a;
+  --surface-bigscreen: #060b1f;
+  --surface-console: #0a1026;
+  --surface-raised: #0d1533;
+  --surface-chip: #141c40;
+  --radius-panel: 12px;
+  --radius-console: 18px;
+  --radius-item: 10px;
   --mars: #c4552f;
   --mars2: #7a2e1b;
   --terra: #5fd38a;
@@ -54,9 +63,9 @@
   --vet: #39d98a;
   --pilot: #43a6ff;
   --engineer: #ff5b4d;
-  --accent: #8f8cff;
+  --accent: #ffb547;
   --bad: #ff6b6b;
-  --good: #5fd38a;
+  --good: #4fe08f;
   color-scheme: dark;
 }
 * {
@@ -75,16 +84,14 @@ body {
     system-ui,
     sans-serif;
   overflow-x: clip;
-  background:
-    radial-gradient(1200px 600px at 80% -10%, #1b1f4d 0%, transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, #2a1030 0%, transparent 55%), var(--sky);
+  background: linear-gradient(180deg, var(--sky2), var(--sky) 40%);
 }
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.55;
+  opacity: 0.3;
   z-index: 0;
   background-image:
     radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 72% 12%, #fff 50%, transparent 51%),
@@ -269,11 +276,10 @@ label.f {
   margin-top: 14px;
 }
 .panel {
-  background: linear-gradient(160deg, var(--glass2), var(--glass));
+  background: var(--glass);
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: var(--radius-panel);
   padding: clamp(16px, 2vw, 22px);
-  backdrop-filter: blur(6px);
 }
 .pill {
   display: inline-flex;
@@ -431,15 +437,11 @@ body.projector .sound {
 }
 .console {
   --c: var(--accent);
-  border-radius: 28px;
+  border-radius: var(--radius-console);
   padding: 16px;
-  border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
-  background:
-    radial-gradient(420px 260px at 50% -40px, color-mix(in srgb, var(--c) 34%, transparent), transparent 70%),
-    linear-gradient(180deg, color-mix(in srgb, var(--c) 14%, #0b0f24), #090c1d 70%);
-  box-shadow:
-    0 30px 80px -40px color-mix(in srgb, var(--c) 70%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--c);
+  background: var(--surface-console);
 }
 .r-captain {
   --c: var(--captain);
@@ -492,7 +494,6 @@ body.projector .sound {
     sans-serif;
   letter-spacing: 0.06em;
   color: #fff;
-  text-shadow: 0 0 24px color-mix(in srgb, var(--c) 80%, transparent);
 }
 .c-help {
   width: 32px;
