@@ -1,0 +1,175 @@
+/* Direction B · Mars Daylight. A light theme: dusty sand and terracotta with dark ink.
+   Built for the real room: projectors in lit meeting rooms wash dark themes out to grey,
+   and phones get used near windows. Role colours are darkened to keep AA on light cards. */
+:root {
+  --sky: #f4e7d7;
+  --sky2: #ead6c0;
+  --ink: #2a1912;
+  --mut: #6a4f40;
+  --line: rgba(42, 25, 18, 0.16);
+  --glass: #fffaf3;
+  --glass2: #fff3e6;
+  --captain: #9a5a00;
+  --vet: #17734a;
+  --pilot: #1d5fae;
+  --engineer: #b8331f;
+  --accent: #b8331f;
+  --bad: #b8331f;
+  --good: #17734a;
+  color-scheme: light;
+}
+html {
+  background: var(--sky);
+}
+body {
+  background: radial-gradient(1200px 600px at 85% -10%, #fbd9bd 0%, transparent 60%), var(--sky);
+}
+body::before {
+  display: none;
+}
+button {
+  background: var(--ink);
+  color: #fff8ef;
+}
+button.ghost,
+a.btnlink {
+  color: var(--ink);
+}
+.panel {
+  backdrop-filter: none;
+  background: var(--glass);
+  box-shadow:
+    0 1px 0 var(--line),
+    0 10px 30px -18px rgba(90, 40, 20, 0.35);
+}
+.pill {
+  background: var(--glass2);
+}
+.sound.sound {
+  background: var(--glass);
+  color: var(--ink);
+}
+
+/* projector: the planet sits on a warm horizon instead of a void */
+.bigscreen {
+  background: linear-gradient(180deg, #fff6ec 0%, #f7dcc2 55%, #e9b48f 100%);
+  border-color: var(--line);
+}
+.bigscreen .planet {
+  opacity: 0.9;
+}
+.bs-feed div {
+  background: rgba(255, 250, 243, 0.92);
+  color: var(--ink);
+  box-shadow: 0 1px 0 var(--line);
+}
+.bs-team {
+  background: #fffaf3;
+  border-color: var(--line);
+  color: var(--ink);
+}
+.bs-team .mini span {
+  background: #f1e2d2;
+  color: var(--mut);
+}
+.bs-team .mini span.ok {
+  background: #c9ecd6;
+  box-shadow: inset 0 0 0 3px var(--good);
+  color: var(--ink);
+}
+.bs-team.done {
+  border-color: var(--good);
+  box-shadow: inset 0 0 0 2px var(--good);
+}
+.bs-pool {
+  background: rgba(255, 250, 243, 0.92);
+}
+.bs-pool .num {
+  color: var(--engineer);
+}
+.bs-stat .num {
+  color: var(--ink);
+}
+.screen-join .code,
+.joincode {
+  color: var(--engineer);
+}
+.projected-ranking {
+  background: rgba(255, 250, 243, 0.95);
+}
+
+/* phone: a printed mission card */
+.console {
+  background: #fffaf3;
+  border: 1px solid var(--line);
+  border-top: 6px solid var(--c);
+  box-shadow: 0 18px 40px -24px rgba(90, 40, 20, 0.45);
+}
+.c-title {
+  color: var(--c);
+  text-shadow: none;
+}
+.c-team,
+.c-help {
+  background: var(--sky);
+  color: var(--ink);
+}
+.c-stats .cash {
+  color: var(--good);
+}
+.tabs button {
+  background: var(--sky);
+  color: var(--ink);
+}
+.tabs button.on {
+  background: var(--c);
+  color: #fff;
+}
+.item {
+  background: #fff;
+  border-color: var(--line);
+}
+.item.on {
+  background: color-mix(in srgb, var(--c) 12%, #fff);
+}
+.item button,
+.give button,
+.tank button {
+  background: var(--ink);
+  color: #fff8ef;
+}
+.item.on button {
+  background: var(--c);
+  color: #fff;
+}
+.medal {
+  background: radial-gradient(circle at 35% 30%, #fff, #f1e2d2 70%);
+}
+.badge {
+  background: var(--ink);
+  color: #fff;
+  box-shadow: none;
+}
+.badge.size {
+  background: var(--c);
+  color: #fff;
+}
+.hint {
+  background: #fde7d6;
+  color: var(--ink);
+}
+.give .wallet {
+  background: var(--sky);
+}
+.status .dot {
+  border-color: var(--line);
+  background: #f1e2d2;
+  color: var(--mut);
+}
+.status .dot.ok {
+  color: #fff;
+}
+.drum {
+  background: #f1e2d2;
+  border-color: var(--line);
+}

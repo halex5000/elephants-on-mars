@@ -1,0 +1,95 @@
+/* Direction A · Mission Control. Evolution of today's look: same night sky, roles and fonts,
+   but flat and opaque instead of glassy. Data first: the planet steps back on the projector,
+   one amber "live" accent, hairline panels. Cheapest on phones (no backdrop blur, no glows). */
+:root {
+  --sky: #040714;
+  --ink: #f2f4ff;
+  --mut: #a7aed0;
+  --line: rgba(160, 175, 255, 0.18);
+  --glass: #0b1128;
+  --glass2: #10183a;
+  --accent: #ffb547;
+  --good: #4fe08f;
+}
+body {
+  background: linear-gradient(180deg, #071029, var(--sky) 40%);
+}
+body::before {
+  opacity: 0.3;
+}
+.panel {
+  backdrop-filter: none;
+  background: var(--glass);
+  border-radius: 12px;
+}
+
+/* projector: a console, not a poster */
+.bigscreen {
+  border-radius: 14px;
+  background: #060b1f;
+  border-color: var(--line);
+}
+.bigscreen .planet {
+  opacity: 0.5;
+  filter: saturate(0.8);
+}
+.bs-feed div {
+  background: #0d1533;
+  border-left: 3px solid var(--line);
+  border-radius: 6px;
+}
+.bs-clock .num {
+  color: var(--accent);
+}
+.bs-team {
+  background: #0d1533;
+  border-radius: 8px;
+}
+.bs-team.done {
+  border-color: var(--good);
+  box-shadow: inset 0 0 0 1px var(--good);
+}
+.bs-stats h3 {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.bs-stat .num {
+  color: var(--ink);
+}
+.bs-stat small,
+.bs-clock small {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+/* phone */
+.console {
+  border-radius: 18px;
+  background: #0a1026;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--c);
+  box-shadow: none;
+}
+.c-title {
+  text-shadow: none;
+  color: var(--c);
+  letter-spacing: 0.14em;
+}
+.c-team,
+.c-help {
+  background: #141c40;
+}
+.item {
+  background: #10183a;
+  border-color: var(--line);
+  border-radius: 10px;
+}
+.item.on {
+  background: color-mix(in srgb, var(--c) 18%, #10183a);
+}
+.medal {
+  background: #141c40;
+}
+.c-stats .num.tmr {
+  color: var(--accent);
+}

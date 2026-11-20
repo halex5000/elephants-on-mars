@@ -1,0 +1,80 @@
+/* N20 shared layer, applied under every direction. This is not a "look": it fixes
+   projector readability. Today the board uses ~1400×640 of a 1920×1080 frame, and the team
+   chips (the thing the room most wants to read) are 14px text with 20px status icons.
+   Rule of thumb: on a 1080p projector, 22px+ for anything a player needs to read from the back. */
+.projector .wrap {
+  max-width: none;
+}
+.projector .band {
+  padding: 20px 32px;
+}
+body.projector .bigscreen {
+  min-height: calc(100vh - 150px);
+}
+body.projector .bs-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+  padding: 32px 36px;
+}
+body.projector .bs-clock .num {
+  font-size: 104px;
+}
+body.projector .bs-clock small,
+body.projector .bs-pool .sm,
+body.projector .bs-stat small {
+  font-size: 22px;
+}
+body.projector .bs-pool .num {
+  font-size: 40px;
+}
+body.projector .bs-feed {
+  max-width: 760px;
+  gap: 8px;
+}
+body.projector .bs-feed div {
+  font-size: 24px;
+  padding: 8px 14px;
+}
+body.projector .bs-feed .sw {
+  width: 16px;
+  height: 16px;
+}
+body.projector .bs-stats h3 {
+  font-size: 44px;
+}
+body.projector .bs-stat .num {
+  font-size: 64px;
+}
+body.projector .bs-teams {
+  gap: 12px;
+  padding: 0 36px 28px;
+}
+body.projector .bs-team {
+  padding: 12px 16px;
+  gap: 12px;
+}
+body.projector .bs-team b {
+  font-size: 24px;
+}
+body.projector .bs-team .mini {
+  gap: 6px;
+}
+body.projector .bs-team .mini span {
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+}
+body.projector .screen-join .code {
+  font-size: 44px;
+}
+body.projector .screen-join .sm {
+  font-size: 20px;
+}
+body.projector .qrbox.mini {
+  width: 96px;
+}
+body.projector .projected-ranking h3 {
+  font-size: 32px;
+}
+body.projector .projected-ranking li {
+  font-size: 24px;
+}

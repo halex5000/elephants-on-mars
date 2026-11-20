@@ -2,6 +2,10 @@
 
 Why things are the way they are. Add an entry when you make a choice someone might otherwise undo. Newest first.
 
+### Visual direction: A · Mission Control (2026-11-19)
+
+Alex picked direction A from the N20 style frames (#35, `docs/visual-directions/`). The game is mostly **screen-shared on a video call**, not projected in a lit room, so a dark theme loses nothing and the light theme (B) isn't worth tokenising every colour for. A keeps the night sky, role colours and bundled fonts, but goes flat and opaque: no `backdrop-filter`, no glows, planet stepped back so the data leads, amber for "live". The projector also gets room-scale sizing (full-width board, 22px+ player-facing text at 1080p), because the shared screen ends up as a small tile on every laptop. Must keep: compact mode above 10 teams, `prefers-reduced-motion`, the axe gate, and phones fast on cell data (no new fonts, images or dependencies). Not decided: whether to borrow C's role-coloured phone header.
+
 ### The Captain can take unspent money back (2026-11-19)
 
 A wrong Give $1 was permanent, which made one misclick costly (found by Alex while testing). The Captain now has −$1 next to each crew member: it moves unspent money back, checked on the server, and can't touch money already spent. It's our addition (the original's footage doesn't show one), so it's marked in the README. Crew members can also give a dollar back to their Captain (#25).
