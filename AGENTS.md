@@ -15,9 +15,13 @@ For any coding agent (Claude Code, Codex) or human. Read this first, then:
 ## Workflow (GitHub-centered)
 
 - **`main` on github.com/halex5000/elephants-on-mars is the source of truth.** Start every task from the latest `main`.
-- **Work items are GitHub Issues** once the backlog is migrated. Until then, `BACKLOG.md`, with the corrections listed in `docs/HANDOFF.md`. Assign yourself before you start.
-- **One branch per issue,** small commits, then a PR that links the issue. If two PRs touch the same file (especially `src/client/main.ts`), say so in the PR.
-- **Merge** your own PR once CI is green (Alex allows it), as a squash. Never push to `main` directly or rewrite shared history.
+- **Work items are GitHub Issues** on the Elephants on Mars Development Project. Before starting, comment on the issue as C Note or Dex with the branch/worktree, then move it to **In Progress**. Post meaningful progress, blockers, and handoffs in the issue.
+- **One branch/worktree per issue,** small commits, and one PR that uses `Closes #<issue>`. If work overlaps another issue or PR (especially `src/client/main.ts`), coordinate first and call out the overlap in the issue and PR.
+- **Routine PRs:** use GitHub auto-merge with squash. The merge waits for every required check and for the branch to be current with `main`; routine PRs do not require human approval. Do not merge directly or push to `main`.
+- **Required checks:** CI App (lint, format, secret scan, typecheck, build, unit, integration, load, browser/axe), Infra (typecheck, tests, CDK synth), Container image, and the high-risk approval gate must all pass. A missing, skipped, cancelled, or failing required check is not a pass.
+- **High-risk changes require Alex's explicit approval** through the `high-risk-approval` environment before merge. This includes `.github/workflows/`, `infra/`, deployment configuration, `AGENTS.md`, package/check configuration, secret-handling files, state snapshots, and schema/migration/storage changes. Do not bypass this gate.
+- **Never bypass a failed check or weaken a test to get green.** Do not skip required jobs, use `continue-on-error` to hide failures, remove or relax assertions, or force-merge. Fix the cause and rerun the appropriate checks; if a check is flaky or broken, report it and repair the check.
+- Linked issues close on successful merge; the Project's close/merge workflows move them to **Done**.
 - **Never deploy.** Deploys are manual (Actions → Deploy to Fly) and end every live game. Alex decides when.
 
 ## Commands
