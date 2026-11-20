@@ -18,7 +18,19 @@ import { planet, rocket, paw, rocketGlyph, drop, qr } from './art.js';
 import { landingMap, downloadPostcard } from './landing-map.js';
 import { esc } from './escape.js';
 import { resultsText } from './export.js';
-import { type Audience, type Cue, audienceOf, cueForError, cuesBetween, loadEnabled, play, saveEnabled, tickFor, unlock } from './sound.js';
+import {
+  type Audience,
+  type Cue,
+  audienceOf,
+  cueForError,
+  cuesForEvents,
+  loadEnabled,
+  play,
+  saveEnabled,
+  tickFor,
+  unlock,
+} from './sound.js';
+import { type GameEvent, eventsBetween } from './transitions.js';
 
 const RI: Record<Role, { t: string; i: string; d: string }> = {
   captain: {
@@ -177,8 +189,11 @@ function onMsg(m: ServerMsg) {
       go({ kind: 'play', code: m.code });
       break;
     case 'view':
-      spotLaunches(m.view);
-      cue(cuesBetween(view, m.view), audienceOf(m.view.kind));
+      {
+        const events = eventsBetween(view, m.view);
+        presentEvents(events, m.view);
+        cue(cuesForEvents(events), audienceOf(m.view.kind));
+      }
       if (view?.phase === 'play' && m.view.phase === 'results' && view.code === m.view.code) announce('Mission over. Results are in.');
       view = m.view;
       clockSkew = m.view.serverNow - Date.now();
@@ -241,27 +256,17 @@ $('#sound')?.addEventListener('click', () => {
 });
 
 /* ---------- launch moment ---------- */
-// One lift-off on the shared screen when a team launches. Lives outside #app so
-// re-renders never cut it short. Not replayed on reload or when joining late.
-let launchedSeen: Set<string> | null = null,
-  launchKey = '';
-function spotLaunches(v: HostView | PlayerView) {
-  if (v.kind !== 'host' || v.phase !== 'play') {
-    launchedSeen = null;
-    return;
-  }
-  const key = `${v.code}|${v.round}`;
-  const now = new Set(v.teams.filter(t => t.status.launched).map(t => t.id));
-  const before = key === launchKey ? launchedSeen : null;
-  launchedSeen = now;
-  launchKey = key;
-  if (!before) return;
-  const fresh = v.teams.filter(t => now.has(t.id) && !before.has(t.id));
-  if (fresh.length)
-    liftOff(
-      fresh.map(t => t.name),
-      v.teams.map(t => t.name),
-    );
+// Visual effects driven by the shared transition events (see transitions.ts), so sound and picture can't disagree.
+// Today that is one lift-off on the shared screen when teams launch. Lives outside #app so re-renders never cut
+// it short. Not replayed on reload or when joining late: those produce no events.
+function presentEvents(events: GameEvent[], v: HostView | PlayerView) {
+  if (v.kind !== 'host') return;
+  for (const e of events)
+    if (e.type === 'launch' && e.audience === 'room')
+      liftOff(
+        e.teams.map(t => t.name),
+        v.teams.map(t => t.name),
+      );
 }
 function liftOff(teams: string[], all: string[]) {
   let layer = document.getElementById('liftoffs');

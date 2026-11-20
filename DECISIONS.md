@@ -72,3 +72,7 @@ An earlier prototype was a Claude artifact with a shared database: every player 
 ### TypeScript and AWS CDK (2026-11-17)
 
 Alex's standing preference for all projects.
+
+## Transition events are one pure mapper (#61)
+
+`src/client/transitions.ts` turns (previous view, next view) into plain `GameEvent`s: room events for the host/projector view, team events for a phone. Sound cues (`cuesForEvents` in `sound.ts`) and the host lift-off in `main.ts` both read those events, so they can't disagree. First view, other game, other viewer kind: no events, so reloads and late joins replay nothing. Deliberately not a plugin/event bus. Future cinematic work should consume `eventsBetween`, not re-diff views. Local-action cues (bid/outbid), clock ticks, mute and hidden-tab handling stay in `sound.ts`/`main.ts` as before.
