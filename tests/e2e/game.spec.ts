@@ -424,7 +424,9 @@ test('the big screen opens from the host page: no controls, follows the game liv
   await host.getByRole('button', { name: 'Start mission 1' }).click();
   await expect(screen.locator('.bs-clock .tmr')).toHaveText(/\d:\d\d/);
   await expect(screen.locator('.screen-join .code')).toHaveText(code);
-  expect(await screen.locator('button, input, select, textarea, [data-act]').count()).toBe(0);
+  // no game controls; the per-device sound toggle is the one allowed button
+  expect(await screen.locator('button:not(#sound), input, select, textarea, [data-act]').count()).toBe(0);
+  await expect(screen.getByRole('button', { name: 'Sound' })).toBeVisible();
   await screen.reload();
   await expect(screen.locator('.bs-clock')).toBeVisible();
 });

@@ -4,6 +4,8 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 
 ## Handoff note
 
+*N19 sound effects, 2026-11-19 by C Note (PR for #40):* new `src/client/sound.ts` (pure event→cue mapping, synth voices, dedupe, mute preference) hooked into `src/client/main.ts`; mute button lives in `index.html`. Unit tests in `tests/unit/sound.test.ts`, persistence e2e in `tests/e2e/sound.spec.ts`. Not verified: how it actually *sounds* (headless can't hear). Needs a human listen on a projector and a phone. See DECISIONS for the cue mapping.
+
 _Moved to `docs/HANDOFF.md` (2026-11-19). This file is kept as is for migration to GitHub Issues; `docs/HANDOFF.md` lists the statuses here that are out of date._
 
 ## Now
@@ -71,6 +73,7 @@ _Moved to `docs/HANDOFF.md` (2026-11-19). This file is kept as is for migration 
 - 50-team proposal (N11, Dex): `docs/scale-50-teams.md`
 - QR code to join (N12): big in the lobby, small tap-to-enlarge during play; e2e test decodes it and joins from a phone
 - Export results (N9): Copy results on the final report, with a select-and-copy fallback; fixed panels snapping shut on screen updates
+- N19 sound effects (#40, C Note): Web Audio cues, room vs phone audiences, per-device mute
 - Git + public GitHub repo (MIT); employer names scrubbed from docs before going public
 - Host passcode for public deploys; Fly.io and Render configs
 
