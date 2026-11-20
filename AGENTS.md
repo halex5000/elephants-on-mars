@@ -56,3 +56,4 @@ The hooks: pre-commit runs secretlint and Biome on staged files; pre-push runs t
 2. Update the issue (or `BACKLOG.md`): status, what's half-done, what's next.
 3. Add to `DECISIONS.md` if you made a choice someone might otherwise undo.
 4. Update `docs/HANDOFF.md` only for cross-cutting context that doesn't belong in a single issue.
+5. At issue completion, fill the PR template's four-line micro-retrospective: friction, technical discovery, improvement opportunity, and follow-up. Keep it brief; "Nothing noteworthy" or "None" is fine. Create follow-up issues only for specific, worthwhile work after checking for duplicates. This is informational only: never add a check, delay a successful merge, or require extra approval for it.
