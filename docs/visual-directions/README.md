@@ -1,5 +1,7 @@
 # N20 · Visual directions (#35)
 
+> **Decision (2026-11-19, Alex): direction A · Mission Control, plus room scale.** The game is mostly screen-shared on a video call. B is not pursued. C's role-coloured phone header is an open question, not a requirement. Recorded in `DECISIONS.md`. Implementation: #48 room scale, #49 tokens, #50 projector and market, #51 phone consoles.
+
 Three style frames for **the projector during play** and **the phone console**. Same layout, same live game, different looks. Exploration only: nothing here changes the product UI. Alex picks a direction (or rejects them all). After that, implementation gets split into token and per-screen issues.
 
 ## How these were made

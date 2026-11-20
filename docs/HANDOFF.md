@@ -43,7 +43,7 @@ Written at the end of the long chat session where most of this repo was built. T
 | Item | State |
 | --- | --- |
 | N19 sound effects | Spec in `BACKLOG.md`. Assigned to Dex, not started. |
-| N20 visual glow-up | Style frames done (#35, C Note): `docs/visual-directions/README.md`. **Alex picks a direction**; then token + per-screen issues get created. |
+| N20 visual glow-up | Style frames done (#35, C Note): `docs/visual-directions/README.md`. Alex picked **A · Mission Control** (see DECISIONS); implementation issues filed. |
 | N2 economy (dominant XL strategy) | **Alex decides** after a human playtest. Findings in `docs/qa-2026-11-19.md`. |
 | N1 human playtest | Alex, using `docs/playtest.md`. Not done yet. |
 | N3, N5, N6, N11, N18, L1, L3, L4, L6 | See `BACKLOG.md`. |
