@@ -1,0 +1,136 @@
+/* Direction C · Cosmic Cartoon. Leans into the party-game tone: flat saturated colour, chunky
+   ink outlines, hard "sticker" shadows (no blur), shouty condensed caps. Most personality and
+   closest to a game-show feel; also the biggest change to how components are drawn. */
+:root {
+  --sky: #1c0f45;
+  --sky2: #2a1766;
+  --ink: #fffaf0;
+  --mut: #cdbff5;
+  --line: #0c0626;
+  --glass: #2c1a6b;
+  --glass2: #3a2486;
+  --captain: #ffc53d;
+  --vet: #3ee08f;
+  --pilot: #4db2ff;
+  --engineer: #ff6a4d;
+  --accent: #ffc53d;
+  --good: #3ee08f;
+}
+body {
+  background: radial-gradient(1000px 520px at 50% 115%, #5a2a8f 0%, transparent 70%), var(--sky);
+}
+body::before {
+  opacity: 0.8;
+}
+h1,
+h2,
+h3 {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+button {
+  background: var(--accent);
+  color: #1c0f45;
+  border: 3px solid var(--line);
+  box-shadow: 0 4px 0 var(--line);
+}
+button.ghost {
+  background: var(--glass2);
+  color: var(--ink);
+  box-shadow: 0 3px 0 var(--line);
+}
+.panel {
+  backdrop-filter: none;
+  background: var(--glass);
+  border: 3px solid var(--line);
+  box-shadow: 0 6px 0 var(--line);
+}
+
+/* projector */
+.bigscreen {
+  background: #241258;
+  border: 4px solid var(--line);
+  box-shadow: 0 8px 0 var(--line);
+}
+.bs-feed div {
+  background: var(--glass2);
+  border: 3px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 3px 0 var(--line);
+}
+.bs-team {
+  background: var(--glass2);
+  border: 3px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 4px 0 var(--line);
+}
+.bs-team .mini span {
+  background: #1c0f45;
+  border: 2px solid var(--line);
+}
+.bs-team .mini span.ok {
+  background: var(--good);
+}
+.bs-team.done {
+  background: #1f6b4a;
+}
+.bs-clock .num {
+  color: var(--accent);
+  text-shadow: 0 5px 0 var(--line);
+}
+.bs-stat .num {
+  color: var(--ink);
+  text-shadow: 0 4px 0 var(--line);
+}
+.bs-pool {
+  background: var(--glass2);
+  border: 3px solid var(--line);
+}
+
+/* phone */
+.console {
+  background: var(--glass);
+  border: 4px solid var(--line);
+  box-shadow: 0 8px 0 var(--line);
+}
+.c-head {
+  background: var(--c);
+  margin: -16px -16px 0;
+  padding: 12px 16px;
+  border-radius: 22px 22px 0 0;
+  border-bottom: 4px solid var(--line);
+}
+.c-title {
+  color: #1c0f45;
+  text-shadow: none;
+}
+.c-team,
+.c-help {
+  background: #1c0f45;
+  color: var(--ink);
+  border: 0;
+  box-shadow: none;
+}
+.item {
+  background: var(--glass2);
+  border: 3px solid var(--line);
+  box-shadow: 0 4px 0 var(--line);
+}
+.item.on {
+  background: color-mix(in srgb, var(--c) 35%, var(--glass2));
+}
+.item button {
+  background: var(--accent);
+  color: #1c0f45;
+}
+.medal {
+  background: #1c0f45;
+  border: 3px solid var(--line);
+}
+.badge {
+  border: 2px solid var(--line);
+  box-shadow: none;
+}
+.status .dot {
+  border: 3px solid var(--line);
+}
