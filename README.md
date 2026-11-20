@@ -21,9 +21,32 @@ npm run build
 npm start                 # http://localhost:3000
 ```
 
-Or `npm run dev` to rebuild the client and restart the server on changes, or `docker compose up --build` to run the same container that runs in AWS.
+Or `npm run dev` to rebuild the client and restart the server on changes.
 
 **Play it solo:** open one tab as the host (**Create a game**), then open four more tabs at the join link. Each tab is its own player (identity is per tab), so you can drive all four roles yourself. A single player who joins alone gets all four roles with tabs. `GAME_SPEED=5 npm start` makes the fuel pool fill faster while you poke around.
+
+### Run with Docker
+
+Start a Docker-compatible runtime (for example, OrbStack on macOS) with Docker Compose available. Leave host port 3000 free. This builds the same Dockerfile used by deployments; no host Node installation is needed.
+
+```bash
+docker compose up --build
+```
+
+Open `http://localhost:3000`. In a second terminal, from the same checkout:
+
+```bash
+docker compose ps                  # app should become healthy
+curl --fail http://localhost:3000/healthz  # JSON with "ok":true
+docker compose stop --timeout 10
+docker compose ps -a               # app should show Exited (0)
+docker compose logs --no-color     # shutdown event with SIGTERM
+docker compose down               # remove the stopped container and network
+```
+
+Ctrl+C in the attached terminal also stops the app; run `docker compose down` afterward to clean up. The default Compose configuration keeps games only in memory, so stopping it ends those games.
+
+**Validated locally on 2026-11-19 ([#34](https://github.com/halex5000/elephants-on-mars/issues/34)):** OrbStack 2.2.5 on Apple Silicon, Docker client 29.6.0 / engine 29.8.2 (Linux ARM64), Compose v5.5.0, Node v22.23.5 inside the image. The commands above used `docker compose -p eom-dex-34` to isolate the test project. Build and health check passed; the homepage, bundled JS/CSS and font returned HTTP 200. A Chrome smoke check created a game, joined a phone-sized player, started a mission and reloaded/reconnected without browser errors. The container ran as `node` (UID 1000), logged `SIGTERM` on stop and exited with code 0, with no OOM or container error; `down` removed its container and network. No Dockerfile or Compose correction was needed. This validates local ARM64; deployment and other architectures are separate checks.
 
 ## How it works
 
