@@ -6,6 +6,10 @@ The common thread between workers. Keep it short and current. Owner is whoever i
 
 _2026-11-19, Dex — N6 / [#34](https://github.com/halex5000/elephants-on-mars/issues/34): local OrbStack build, HTTP/browser smoke and clean shutdown validated. README now records commands and results; Dockerfile and Compose needed no changes. Local checks, types, build, 96 unit, 29 integration, load, 33 browser/axe and 11 infra tests plus CDK synth passed. Branch `n6-docker-validation`; review and CI are next. GitHub issue #34 carries the full validation and PR handoff._
 
+*N5 / #33, 2026-11-19 by Dex:* discovery recorded in `docs/captain-restart.md`. Alex was asked what Restart did and when it was available; behavior remains unknown pending an answer. No gameplay change. Documentation checks run locally; runtime suites left to required PR CI. Next: record any player confirmation in #33 and let Alex prioritize a separate implementation issue if wanted.
+
+*N19 sound effects, 2026-11-19 by C Note (PR for #40):* new `src/client/sound.ts` (pure event→cue mapping, synth voices, dedupe, mute preference) hooked into `src/client/main.ts`; mute button lives in `index.html`. Unit tests in `tests/unit/sound.test.ts`, persistence e2e in `tests/e2e/sound.spec.ts`. Not verified: how it actually *sounds* (headless can't hear). Needs a human listen on a projector and a phone. See DECISIONS for the cue mapping.
+
 _Moved to `docs/HANDOFF.md` (2026-11-19). This file is kept as is for migration to GitHub Issues; `docs/HANDOFF.md` lists the statuses here that are out of date._
 
 ## Now
@@ -45,7 +49,7 @@ _Moved to `docs/HANDOFF.md` (2026-11-19). This file is kept as is for migration 
 | --- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | N2  | Tune the economy (dominant XL strategy) | QA pass found money never binds: Orca + Mammoth = $7 for 55 pts/mission, $10 income + carryover. Options and suggestion in `docs/qa-2026-11-19.md`. **Alex decides** after a human playtest; quickest test is Money per mission = 7 in the lobby. |
 | N3  | Big-game fuel contention                  | In the 200-player load test, 50 engineers sharing one pool stretched the first mission past 4 minutes (later missions fine thanks to carried-over stock). Options: raise `FUEL.ratePerTeam`, raise the cap, or start each team with a little stock. |
-| N5  | Captain's "Restart" button                | The original has one; what it does isn't shown. Ask someone who's played (Alex has played the original).                                                                                                                                            |
+| N5  | Captain's "Restart" button                | Discovery #33: Alex asked; behavior and availability remain unknown. See `docs/captain-restart.md`.                                                                                                                                            |
 | N18 | Final report polish | Leaderboard lists a team's bots but not its humans; big empty area beside a one-team leaderboard. From the QA pass. |
 | N11 | 50-team play: market sectors + big screen | Proposal merged (`docs/scale-50-teams.md`). Default-budget results favor keeping the shared fuel pool. Trial the optional auction treatment (`EXTRA_LISTING_MIN_TEAMS`) with people before enabling it.                                             |
 
@@ -73,6 +77,7 @@ _Moved to `docs/HANDOFF.md` (2026-11-19). This file is kept as is for migration 
 - 50-team proposal (N11, Dex): `docs/scale-50-teams.md`
 - QR code to join (N12): big in the lobby, small tap-to-enlarge during play; e2e test decodes it and joins from a phone
 - Export results (N9): Copy results on the final report, with a select-and-copy fallback; fixed panels snapping shut on screen updates
+- N19 sound effects (#40, C Note): Web Audio cues, room vs phone audiences, per-device mute
 - Git + public GitHub repo (MIT); employer names scrubbed from docs before going public
 - Host passcode for public deploys; Fly.io and Render configs
 
