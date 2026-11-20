@@ -1,0 +1,109 @@
+name: High-risk approval
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  pull-requests: read
+
+concurrency:
+  group: high-risk-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    name: Detect high-risk files
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      approval_required: ${{ steps.paths.outputs.approval_required }}
+    steps:
+      - name: Check changed paths using the base-branch workflow
+        id: paths
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
+        run: |
+          set -euo pipefail
+
+          if (( CHANGED_FILES > 3000 )); then
+            echo "::warning::The PR exceeds the file-list API limit; requiring manual approval."
+            echo "approval_required=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          files="$(gh api --paginate "repos/${GH_REPOSITORY}/pulls/${PR_NUMBER}/files?per_page=100" --jq '.[].filename')"
+          high_risk=()
+          while IFS= read -r path; do
+            [[ -n "$path" ]] || continue
+            case "$path" in
+              .github/workflows/*|.github/CODEOWNERS|AGENTS.md|infra/*|Dockerfile|docker-compose.yml|fly.toml|render.yaml|\
+              .nvmrc|biome.json|playwright.config.ts|tsconfig*.json|\
+              .env|.env.*|*/.env|*/.env.*|*.pem|*.key|*.p12|*.pfx|*secret*|\
+              package.json|package-lock.json|*/package.json|*/package-lock.json|\
+              *.tfstate|\
+              *migrations/*|*migration/*|*schema/*|*storage/*|src/server/snapshots.ts)
+                high_risk+=("$path")
+                ;;
+            esac
+          done <<< "$files"
+
+          if (( ${#high_risk[@]} > 0 )); then
+            printf 'Manual approval required for:\n%s\n' "${high_risk[@]}"
+            echo "approval_required=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No high-risk paths found."
+            echo "approval_required=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  approve:
+    name: Manual approval for high-risk changes
+    needs: detect
+    if: needs.detect.outputs.approval_required == 'true'
+    runs-on: ubuntu-latest
+    environment: high-risk-approval
+    steps:
+      - run: echo "High-risk changes were explicitly approved."
+
+  gate:
+    name: High-risk approval gate
+    if: always()
+    needs: [detect, approve]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail closed unless detection and required approval succeeded
+        env:
+          DETECT_RESULT: ${{ needs.detect.result }}
+          APPROVAL_REQUIRED: ${{ needs.detect.outputs.approval_required }}
+          APPROVAL_RESULT: ${{ needs.approve.result }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$DETECT_RESULT" != success ]]; then
+            echo "::error::High-risk path detection did not succeed."
+            exit 1
+          fi
+
+          case "$APPROVAL_REQUIRED" in
+            true)
+              if [[ "$APPROVAL_RESULT" != success ]]; then
+                echo "::error::A high-risk change requires explicit approval in the high-risk-approval environment."
+                exit 1
+              fi
+              ;;
+            false)
+              if [[ "$APPROVAL_RESULT" != skipped ]]; then
+                echo "::error::Unexpected high-risk approval job result: $APPROVAL_RESULT"
+                exit 1
+              fi
+              ;;
+            *)
+              echo "::error::High-risk path detection returned no valid result."
+              exit 1
+              ;;
+          esac
