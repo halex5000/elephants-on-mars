@@ -18,6 +18,7 @@ import { planet, rocket, paw, rocketGlyph, drop, qr } from './art.js';
 import { landingMap, downloadPostcard } from './landing-map.js';
 import { esc } from './escape.js';
 import { resultsText } from './export.js';
+import { type Audience, type Cue, audienceOf, cueForError, cuesBetween, loadEnabled, play, saveEnabled, tickFor, unlock } from './sound.js';
 
 const RI: Record<Role, { t: string; i: string; d: string }> = {
   captain: {
@@ -177,6 +178,7 @@ function onMsg(m: ServerMsg) {
       break;
     case 'view':
       spotLaunches(m.view);
+      cue(cuesBetween(view, m.view), audienceOf(m.view.kind));
       if (view?.phase === 'play' && m.view.phase === 'results' && view.code === m.view.code) announce('Mission over. Results are in.');
       view = m.view;
       clockSkew = m.view.serverNow - Date.now();
@@ -189,6 +191,10 @@ function onMsg(m: ServerMsg) {
       break;
     case 'error':
       ui.busy = false;
+      {
+        const c = cueForError(m.message);
+        if (c) cue([c], 'personal');
+      }
       if (m.needPasscode) {
         store.del(PASS_KEY);
         ui.needPass = true;
@@ -208,6 +214,31 @@ function onMsg(m: ServerMsg) {
       break;
   }
 }
+
+/* ---------- sound ---------- */
+// Projector and host play room-wide cues; phones play quieter personal ones (see sound.ts).
+const audience = (): Audience => (route.kind === 'play' ? 'personal' : 'room');
+const soundOn = () => loadEnabled(audience());
+const cue = (cues: Cue[], a: Audience = audience()) => play(cues, a, loadEnabled(a));
+let lastTicked = 0;
+function renderSoundButton() {
+  const b = $<HTMLButtonElement>('#sound');
+  if (!b) return;
+  const on = soundOn();
+  b.hidden = route.kind === 'home';
+  b.setAttribute('aria-pressed', String(on));
+  b.firstElementChild!.textContent = on ? '🔊' : '🔇';
+}
+// Browsers only allow sound after a tap or key press.
+for (const ev of ['pointerdown', 'keydown'] as const) document.addEventListener(ev, unlock, { capture: true });
+$('#sound')?.addEventListener('click', () => {
+  const on = !soundOn();
+  saveEnabled(audience(), on);
+  unlock();
+  renderSoundButton();
+  if (on) cue(['bid']); // a blip so people know it works
+  announce(on ? 'Sound on.' : 'Sound off.');
+});
 
 /* ---------- launch moment ---------- */
 // One lift-off on the shared screen when a team launches. Lives outside #app so
@@ -320,6 +351,9 @@ function tick() {
   tickMarkets();
   const s = secsLeft();
   announceClock(s);
+  const t = tickFor(s, lastTicked);
+  lastTicked = s;
+  if (t) cue([t]);
   document.querySelectorAll('.tmr').forEach(el => {
     el.textContent = s > 0 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : "Time's up";
     el.classList.toggle('hot', s > 0 && s <= 30);
@@ -361,6 +395,7 @@ function render() {
       return !from.isEqualNode(to);
     },
   });
+  renderSoundButton();
   tick();
 }
 const band = (inner: string, cls = '') => `<section class="band ${cls}"><div class="wrap">${inner}</div></section>`;
@@ -775,12 +810,15 @@ document.addEventListener('click', e => {
       );
       break;
     case 'buyAnimal':
+      cue(['bid'], 'personal');
       act({ a: 'buyAnimal', animal: d.id!, maxPrice: withSlack(auctionPrice(Number(d.base), Number(d.reset), serverNow())) });
       break;
     case 'buyRocket':
+      cue(['bid'], 'personal');
       act({ a: 'buyRocket', rocket: d.id!, maxPrice: withSlack(auctionPrice(Number(d.base), Number(d.reset), serverNow())) });
       break;
     case 'buyFuel':
+      cue(['bid'], 'personal');
       act({ a: 'buyFuel', minUnits: fuelInPool(Number(d.reset), Number(d.rate), serverNow()) });
       break;
     case 'sendFuel':
