@@ -39,13 +39,22 @@
   src: url(/fonts/nunito-sans-latin-800-normal.woff2) format("woff2");
 }
 :root {
-  --sky: #070a1a;
-  --sky2: #0e1430;
-  --ink: #f4f1ff;
-  --mut: #a9a6c8;
-  --line: rgba(255, 255, 255, 0.12);
-  --glass: rgba(255, 255, 255, 0.06);
-  --glass2: rgba(255, 255, 255, 0.1);
+  /* Direction A · Mission Control (DECISIONS.md, 2026-11-19): flat, opaque, one amber "live" accent. */
+  --sky: #040714;
+  --sky2: #071029;
+  --ink: #f2f4ff;
+  --mut: #a7aed0;
+  --line: rgba(160, 175, 255, 0.18);
+  /* Panel surfaces: opaque steps, darkest to lightest. */
+  --glass: #0b1128;
+  --glass2: #10183a;
+  --surface-bigscreen: #060b1f;
+  --surface-console: #0a1026;
+  --surface-raised: #0d1533;
+  --surface-chip: #141c40;
+  --radius-panel: 12px;
+  --radius-console: 18px;
+  --radius-item: 10px;
   --mars: #c4552f;
   --mars2: #7a2e1b;
   --terra: #5fd38a;
@@ -54,9 +63,9 @@
   --vet: #39d98a;
   --pilot: #43a6ff;
   --engineer: #ff5b4d;
-  --accent: #8f8cff;
+  --accent: #ffb547;
   --bad: #ff6b6b;
-  --good: #5fd38a;
+  --good: #4fe08f;
   color-scheme: dark;
 }
 * {
@@ -75,16 +84,14 @@ body {
     system-ui,
     sans-serif;
   overflow-x: clip;
-  background:
-    radial-gradient(1200px 600px at 80% -10%, #1b1f4d 0%, transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, #2a1030 0%, transparent 55%), var(--sky);
+  background: linear-gradient(180deg, var(--sky2), var(--sky) 40%);
 }
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.55;
+  opacity: 0.3;
   z-index: 0;
   background-image:
     radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 72% 12%, #fff 50%, transparent 51%),
@@ -269,11 +276,10 @@ label.f {
   margin-top: 14px;
 }
 .panel {
-  background: linear-gradient(160deg, var(--glass2), var(--glass));
+  background: var(--glass);
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: var(--radius-panel);
   padding: clamp(16px, 2vw, 22px);
-  backdrop-filter: blur(6px);
 }
 .pill {
   display: inline-flex;
@@ -431,15 +437,11 @@ body.projector .sound {
 }
 .console {
   --c: var(--accent);
-  border-radius: 28px;
+  border-radius: var(--radius-console);
   padding: 16px;
-  border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
-  background:
-    radial-gradient(420px 260px at 50% -40px, color-mix(in srgb, var(--c) 34%, transparent), transparent 70%),
-    linear-gradient(180deg, color-mix(in srgb, var(--c) 14%, #0b0f24), #090c1d 70%);
-  box-shadow:
-    0 30px 80px -40px color-mix(in srgb, var(--c) 70%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--c);
+  background: var(--surface-console);
 }
 .r-captain {
   --c: var(--captain);
@@ -483,16 +485,16 @@ body.projector .sound {
   font-weight: 800;
   padding: 6px 10px;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--surface-chip);
 }
 .c-title {
   text-align: center;
   font:
     800 clamp(40px, 9vw, 54px) / 1 "Saira Condensed",
     sans-serif;
-  letter-spacing: 0.06em;
-  color: #fff;
-  text-shadow: 0 0 24px color-mix(in srgb, var(--c) 80%, transparent);
+  letter-spacing: 0.14em;
+  color: var(--c);
+  text-shadow: none;
 }
 .c-help {
   width: 32px;
@@ -500,7 +502,7 @@ body.projector .sound {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--surface-chip);
   font-weight: 800;
 }
 .c-stats {
@@ -542,7 +544,7 @@ body.projector .sound {
   justify-content: center;
 }
 .tabs button {
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--surface-chip);
   color: var(--ink);
   min-height: 36px;
   font-size: 14px;
@@ -550,6 +552,16 @@ body.projector .sound {
 .tabs button.on {
   background: var(--c);
   color: #0b0f24;
+}
+/* four roles on a phone: one row, not 3 + 1 */
+@media (max-width: 520px) {
+  .tabs:has(button:nth-child(4)) {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .tabs:has(button:nth-child(4)) button {
+    padding-inline: 4px;
+  }
 }
 
 /* item rows (animals, rockets) */
@@ -576,13 +588,13 @@ body.projector .sound {
   gap: 10px;
   align-items: center;
   padding: 12px 12px 12px 16px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-item);
+  background: var(--glass2);
+  border: 1px solid var(--line);
 }
 .item.on {
-  background: color-mix(in srgb, var(--c) 24%, transparent);
-  border-color: color-mix(in srgb, var(--c) 70%, transparent);
+  background: color-mix(in srgb, var(--c) 18%, var(--glass2));
+  border-color: color-mix(in srgb, var(--c) 70%, var(--glass2));
 }
 .item b {
   font:
@@ -623,8 +635,8 @@ body.projector .sound {
   display: grid;
   place-items: center;
   font-size: 40px;
-  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.04) 70%);
-  border: 2px solid color-mix(in srgb, var(--c) 60%, transparent);
+  background: var(--surface-chip);
+  border: 2px solid color-mix(in srgb, var(--c) 60%, var(--surface-chip));
 }
 .medal svg {
   width: 46px;
@@ -643,7 +655,6 @@ body.projector .sound {
     sans-serif;
   background: #fff;
   color: #0b0f24;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
 }
 .badge.tl {
   top: -6px;
@@ -674,8 +685,8 @@ body.projector .sound {
   gap: 12px;
   align-items: center;
   padding: 12px 14px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-item);
+  background: var(--glass2);
 }
 .give b {
   font:
@@ -689,7 +700,7 @@ body.projector .sound {
     sans-serif;
   padding: 6px 12px;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--surface-chip);
   color: var(--good);
   min-width: 64px;
   text-align: right;
@@ -737,7 +748,7 @@ body.projector .sound {
   margin: 10px 4px 0;
   padding: 8px 12px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-chip);
   font-size: 14px;
 }
 .price.paid {
@@ -754,8 +765,8 @@ body.projector .sound {
 .tank {
   text-align: center;
   padding: 14px 10px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-item);
+  background: var(--glass2);
 }
 .tank h3 {
   font-size: 20px;
@@ -973,6 +984,12 @@ body.projector .sound {
   border-radius: 14px;
   padding: 8px 10px;
   border: 1px solid var(--line);
+}
+.team-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
 }
 .bs-team b {
   font-size: 14px;
@@ -1318,8 +1335,96 @@ button.qrbox:focus-visible {
 body.projector .mast {
   display: none;
 }
-.projector .wrap {
-  max-width: 1400px;
+body.projector .wrap {
+  max-width: none;
+}
+body.projector .band {
+  padding: 20px 32px;
+}
+body.projector .bigscreen {
+  min-height: calc(100vh - 150px);
+}
+body.projector .bs-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+  padding: 32px 36px;
+}
+body.projector .bs-clock .num {
+  font-size: 104px;
+}
+body.projector .bs-clock small,
+body.projector .bs-pool .sm,
+body.projector .bs-stat small {
+  font-size: 22px;
+}
+body.projector .bs-pool .num {
+  font-size: 40px;
+}
+body.projector .bs-feed {
+  max-width: 760px;
+  gap: 8px;
+}
+body.projector .bs-feed div {
+  font-size: 24px;
+  line-height: 1.3;
+  padding: 8px 14px;
+}
+body.projector .bs-feed .sw {
+  width: 16px;
+  height: 16px;
+}
+body.projector .bs-stats h3 {
+  font-size: 44px;
+}
+body.projector .bs-stat .num {
+  font-size: 64px;
+}
+body.projector .bs-teams {
+  margin-top: 24px;
+  gap: 12px;
+  padding: 0 36px 28px;
+}
+body.projector .bs-team {
+  padding: 12px 16px;
+  gap: 12px;
+}
+body.projector .bs-team b {
+  font-size: 24px;
+}
+body.projector .bs-team .mini {
+  gap: 6px;
+}
+body.projector .bs-team .mini span {
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+}
+body.projector .screen-join .code {
+  font-size: 44px;
+}
+body.projector .screen-join .sm {
+  font-size: 22px;
+}
+body.projector .qrbox.mini {
+  width: 96px;
+}
+body.projector .projected-ranking h3 {
+  font-size: 32px;
+}
+body.projector .projected-ranking li {
+  font-size: 24px;
+}
+body.projector .team-swatch {
+  width: 16px;
+  height: 16px;
+}
+body.projector .projected-ranking summary {
+  font-size: 22px;
+}
+/* Keep the existing stacked board on narrow projector windows. */
+@media (max-width: 760px) {
+  body.projector .bs-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .screen-lobby {
   display: grid;
